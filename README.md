@@ -2,15 +2,19 @@
 
 A python tool to maintain a local OHLCV candles history of crypto instruments for various exchanges.
 
-For now the repository is in a Work in Progress state. See Todo section below for the list of things that I must implement before having it ready.
-
 # Goal
 
-TODO: explain what this repository is for
+The goal is to gather a lot of OHLCV data from crypto exchanges for analysis and crypto trading/investing.
 
 # Setup
 
-TODO (pip install etc.)
+In a clone of the repository, run the following commands to install a python 3 virtual environment for running the script:
+
+```bash
+virtualenv venv
+source venv/Scripts/activate
+pip install -r requirements.txt
+```
 
 # Usage
 
@@ -26,16 +30,14 @@ Examples:
 
 # CSV Files
 
-List columns
+The fetch-ohlcv command update a file 'EXCHANGE-INSTRUMENT.csv' in the folder specified on the command line. If the file or the folder do not exist, they are created.
 
-# Done
+The columns of the CSV file are open_timestamp_utc, close_timestamp_utc, open, high, low, close and volume.
 
-- Fetch OHLCV candles from bitmex and store them in csv files.
+Timestamps are in seconds and in UTC timezone.
 
 # Todo
 
-- Handle timeframes in command line
-- Implement more exchanges (at least binance and coinbasepro)
-- Provide the possibility to list instruments and timeframes from a given exchange
-- Provide the possibility to list exchanges
+- Implement more exchanges (at coinbasepro)
 - Better README.md
+- Store information about each product in a json file

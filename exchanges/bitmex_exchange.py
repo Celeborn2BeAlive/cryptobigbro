@@ -2,7 +2,7 @@ import bitmex
 import bravado
 import pandas as pd
 
-from utils import timedeltas, candle_list_to_dataframe
+from utils import timedelta, candle_list_to_dataframe
 
 class BitmexExchange:
     def __init__(self):
@@ -11,7 +11,7 @@ class BitmexExchange:
     
     def fetch_ohlcv(self, timeframe, since, instrument):
         # adding one time interval because Bitmex api is returning us close times instead of open times
-        closeDate = since + timedeltas[timeframe]
+        closeDate = since + timedelta(timeframe)
         try:
             result = self._client.Trade.Trade_getBucketed(
                 symbol=instrument, reverse=False, count=self._limit, binSize=timeframe, startTime=closeDate).result()[0]
@@ -23,8 +23,9 @@ class BitmexExchange:
 
         # compute open and close times of each candle
         for candle in candles:
-            candle["openDate"] = candle['timestamp'] - timedeltas[timeframe]
-            candle["closeDate"] = candle['timestamp']
+            candle["open_datetime_utc"] = candle['timestamp'] - timedelta(timeframe)
+            candle["close_datetime_utc"] = candle['timestamp'] - timedelta('1s')
+            candle["trade_count"] = candle["trades"]
 
         return candle_list_to_dataframe(candles)
     
@@ -32,4 +33,4 @@ class BitmexExchange:
         return [ "1d", "1h", "5m", "1m" ]
     
     def get_instruments(self):
-        return [ i["symbol"] for i in self._client.Instrument.Instrument_getActive().result()[0] ]
+        return [ _["symbol"] for _ in self._client.Instrument.Instrument_getActive().result()[0] ]
