@@ -17,7 +17,9 @@ def parse_cli_args():
         'exchange', help='Name of the exchange, eg. bitmex, binance, coinbasepro, etc.'
     )
     fetch_ohlcv_parser.add_argument(
-        'instrument', help='Name of the instrument, eg. XBTUSD, ETHBTC, etc. Depends on the exchange.'
+        'instruments',
+        type=string_list_arg,
+        help='Name of instruments to fetch data, eg. XBTUSD, ETHBTC, etc. Depends on the exchange.'
     )
     fetch_ohlcv_parser.add_argument(
         'folder', help='Path to the folder where OHLCV csv files should be stored.'
@@ -82,29 +84,41 @@ if __name__ == "__main__":
 
     exchange_timeframes = exchange.get_timeframes()
 
-    for tf in timeframes:
-        if not tf in exchange_timeframes:
-            print("Unsupported timeframe {} for exchange {}.".format(tf, args.exchange))
+    print("Exchange {}.".format(args.exchange))
+
+    for instrument in args.instruments:
+        if not instrument in exchange.get_instruments():
+            print("[ERROR] Unsupported instrument {} for exchange {}.".format(instrument, args.exchange))
             continue
 
-        path_to_csv_file = os.path.join(args.folder, args.exchange + "-" + args.instrument + "-" + tf + ".csv")
+        print("-- Fetching data for instrument {}.".format(instrument))
 
-        since = origin_of_time
-        if (os.path.exists(path_to_csv_file)):
-            print("Load existing history {} to get next timestamp".format(path_to_csv_file))
-            df = pd.read_csv(path_to_csv_file, index_col='open_timestamp')
-            since = datetime.fromtimestamp(df.close_timestamp_utc.values[-1], timezone.utc)
-            
-        while True:
-            print("Fetching ohlcv candles for timeframe {} since {}".format(tf, since))
-            df = exchange.fetch_ohlcv(timeframe=tf, since=since, instrument=args.instrument)
-            print("{} ohlcv candles received.".format(len(df)))
+        for tf in timeframes:
+            if not tf in exchange_timeframes:
+                print("[ERROR] Unsupported timeframe {} for exchange {}.".format(tf, args.exchange))
+                continue
 
-            if df.empty:
-                print("No candles received for timeframe {}, work is done.".format(tf))
-                break
+            print("\t-- Fetching data for timeframe {}.".format(tf))
 
-            df.to_csv(path_to_csv_file, index_label='open_timestamp', mode='a', header=not os.path.exists(path_to_csv_file))
-            since = datetime.fromtimestamp(df.close_timestamp_utc.values[-1], timezone.utc)
+            path_to_csv_file = os.path.join(args.folder, args.exchange + "-" + instrument + "-" + tf + ".csv")
 
-            time.sleep(1)  # ensure we don't flood exchange API with requests
+            since = origin_of_time
+            if (os.path.exists(path_to_csv_file)):
+                print("\t\t-- Loading existing history from file {} to get next timestamp.".format(path_to_csv_file))
+                df = pd.read_csv(path_to_csv_file, index_col='open_timestamp')
+                since = datetime.fromtimestamp(df.close_timestamp_utc.values[-1], timezone.utc)
+                
+            while True:
+                print("\t\t-- Fetching candles since {}".format(since))
+                df = exchange.fetch_ohlcv(timeframe=tf, since=since, instrument=instrument)
+                
+                if df.empty:
+                    print("\t\t-- No candles received for timeframe {}, work is done.".format(tf))
+                    break
+                else:
+                    print("\t\t-- {} candles received.".format(len(df)))
+
+                df.to_csv(path_to_csv_file, index_label='open_timestamp', mode='a', header=not os.path.exists(path_to_csv_file))
+                since = datetime.fromtimestamp(df.close_timestamp_utc.values[-1], timezone.utc)
+
+                time.sleep(1)  # ensure we don't flood exchange API with requests
