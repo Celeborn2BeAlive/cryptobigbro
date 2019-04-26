@@ -41,8 +41,7 @@ def candle_list_to_dataframe(candles):
         'high': [],
         'low': [],
         'close': [],
-        'volume': [],
-        'quote_volume': []
+        'volume': []
     }
     index = []
 
@@ -50,11 +49,18 @@ def candle_list_to_dataframe(candles):
         for item in candle_fields:
             data_dict[item].append(candle[item])
         data_dict['close_timestamp_utc'].append(int(candle["close_datetime_utc"].timestamp()))
-        if 'quote_volume' in candle.keys():
-            data_dict['quote_volume'].append(candle["quote_volume"])
         index.append(int(candle["open_datetime_utc"].timestamp()))
 
     df = pd.DataFrame(data_dict, index=index)
     df.index.name = "open_timestamp_utc"
 
     return df
+
+def compute_end_timestamp(exchange_now, timeframe):
+    if timeframe == "1M":
+        # Special case for month because it has not fixed timedelta
+        return datetime(exchange_now.year, exchange_now.month, 1) - timedelta('1s')
+
+    td = timedelta(timeframe)
+    start_of_current_bar = int(exchange_now.timestamp() / td.total_seconds()) * td.total_seconds()
+    return datetime.fromtimestamp(start_of_current_bar, timezone.utc) - timedelta('1s')

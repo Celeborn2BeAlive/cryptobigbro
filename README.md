@@ -4,7 +4,9 @@ A python tool to maintain a local OHLCV candles history of crypto instruments fo
 
 # Goal
 
-The goal is to gather a lot of OHLCV data from crypto exchanges for analysis and crypto trading/investing.
+The goal is to gather and save a lot of OHLCV data from crypto exchanges for analysis and crypto trading/investing.
+
+Most exchanges are not keeping many OHLCV candles. For example Coinbase Pro only gives use a few hundreds candles in the past. This script allows to fetch periodically the data and save it for later use.
 
 # Setup
 
@@ -38,6 +40,5 @@ Timestamps are in seconds and in UTC timezone.
 
 # Todo
 
-- Implement more exchanges (at coinbasepro)
 - Better README.md
 - Store information about each product in a json file

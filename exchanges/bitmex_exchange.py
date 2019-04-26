@@ -4,6 +4,8 @@ import pandas as pd
 
 from utils import timedelta, candle_list_to_dataframe
 
+# API used: https://github.com/BitMEX/api-connectors/tree/master/official-http/python-swaggerpy
+
 class BitmexExchange:
     def __init__(self):
         self._client = bitmex.bitmex(test=False)

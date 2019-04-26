@@ -1,24 +1,24 @@
 from binance.client import Client as BinanceClient
 import pandas as pd
 from datetime import datetime, timezone
+from utils import candle_list_to_dataframe, timedelta, compute_end_timestamp
 
-from utils import candle_list_to_dataframe, timedelta
+# API used: https://github.com/sammchardy/python-binance
 
 class BinanceExchange:
     def __init__(self):
         self._client = BinanceClient("", "")
         self._limit = 1000
     
+    def utctimestamp(self):
+        return int(self._client.get_server_time()['serverTime'] / 1000)
+
+    def utcnow(self):
+        return datetime.fromtimestamp(self.utctimestamp(), timezone.utc)
+
     def fetch_ohlcv(self, timeframe, since, instrument):
         # Binance include the current (and unfinished) bar in the fetched data, we need to compute endTime to remove it
-        n = datetime.now(timezone.utc)
-        if timeframe == BinanceClient.KLINE_INTERVAL_1MONTH:
-            # Special case for month because it has not fixed timedelta
-            endTime = datetime(n.year, n.month, 1) - timedelta('1s')
-        else:
-            td = timedelta(timeframe)
-            start_of_current_bar = int(n.timestamp() / td.total_seconds()) * td.total_seconds()
-            endTime = datetime.fromtimestamp(start_of_current_bar, timezone.utc) - timedelta('1s')
+        endTime = compute_end_timestamp(self.utcnow(), timeframe)
 
         result = self._client.get_klines(
             symbol=instrument,

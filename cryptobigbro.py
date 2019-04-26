@@ -2,7 +2,7 @@ import argparse, os, time
 import pandas as pd
 from datetime import datetime, timezone
 from utils import ensure_mkdir, origin_of_time
-from exchanges import make_bitmex_exchange, make_binance_exchange
+from exchanges import make_bitmex_exchange, make_binance_exchange, make_coinbasepro_exchange
 import pprint
 
 def string_list_arg(string):
@@ -49,7 +49,8 @@ if __name__ == "__main__":
 
     exchanges = {
         "bitmex": make_bitmex_exchange,
-        "binance": make_binance_exchange
+        "binance": make_binance_exchange,
+        "coinbasepro": make_coinbasepro_exchange
     }
 
     if args.action == "list-exchanges":
