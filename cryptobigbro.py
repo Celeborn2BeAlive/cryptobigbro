@@ -17,9 +17,9 @@ def parse_cli_args():
         'exchange', help='Name of the exchange, eg. bitmex, binance, coinbasepro, etc.'
     )
     fetch_ohlcv_parser.add_argument(
-        'instruments',
+        '--instruments',
         type=string_list_arg,
-        help='Name of instruments to fetch data, eg. XBTUSD, ETHBTC, etc. Depends on the exchange.'
+        help='Name of instruments to fetch data, eg. XBTUSD, ETHBTC, etc. Depends on the exchange. If not provided, all instruments provided by the exchange will be fetched.'
     )
     fetch_ohlcv_parser.add_argument(
         'folder', help='Path to the folder where OHLCV csv files should be stored.'
@@ -27,7 +27,7 @@ def parse_cli_args():
     fetch_ohlcv_parser.add_argument(
         '--timeframes',
         type=string_list_arg,
-        help='A comma separated list of timeframes. If not provided, all timeframes provided by the exchange will be fetch.'
+        help='A comma separated list of timeframes. If not provided, all timeframes provided by the exchange will be fetched.'
     )
 
     list_instruments_parser = commands.add_parser("list-instruments")
@@ -76,18 +76,17 @@ if __name__ == "__main__":
     assert(args.action == "fetch-ohlcv")
 
     ensure_mkdir(args.folder)
-    
-    if args.timeframes:
-        timeframes = args.timeframes
-    else:
-        timeframes = exchange.get_timeframes()
+
+    timeframes = args.timeframes if args.timeframes else exchange.get_timeframes()
+    instruments = args.instruments if args.instruments else exchange.get_instruments();
 
     exchange_timeframes = exchange.get_timeframes()
+    exchange_instruments = exchange.get_instruments();
 
     print("Exchange {}.".format(args.exchange))
 
-    for instrument in args.instruments:
-        if not instrument in exchange.get_instruments():
+    for instrument in instruments:
+        if not instrument in exchange_instruments:
             print("[ERROR] Unsupported instrument {} for exchange {}.".format(instrument, args.exchange))
             continue
 
