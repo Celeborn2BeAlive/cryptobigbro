@@ -104,7 +104,7 @@ if __name__ == "__main__":
             since = origin_of_time
             if (os.path.exists(path_to_csv_file)):
                 print("\t\t-- Loading existing history from file {} to get next timestamp.".format(path_to_csv_file))
-                df = pd.read_csv(path_to_csv_file, index_col='open_timestamp')
+                df = pd.read_csv(path_to_csv_file, index_col='open_timestamp_utc')
                 since = datetime.fromtimestamp(df.close_timestamp_utc.values[-1], timezone.utc)
                 
             while True:
@@ -117,7 +117,7 @@ if __name__ == "__main__":
                 else:
                     print("\t\t-- {} candles received.".format(len(df)))
 
-                df.to_csv(path_to_csv_file, index_label='open_timestamp', mode='a', header=not os.path.exists(path_to_csv_file))
+                df.to_csv(path_to_csv_file, index_label='open_timestamp_utc', mode='a', header=not os.path.exists(path_to_csv_file))
                 since = datetime.fromtimestamp(df.close_timestamp_utc.values[-1], timezone.utc)
 
                 time.sleep(1)  # ensure we don't flood exchange API with requests
