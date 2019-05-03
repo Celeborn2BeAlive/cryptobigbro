@@ -1,0 +1,9 @@
+[Unit]
+Description=Run 'python cryptobigbro fetch-ohlcv binance' every hour
+Requires=cryptobigbro-binance-update.service
+
+[Timer]
+OnCalendar=*-*-* *:00:00
+
+[Install]
+WantedBy=timers.target
