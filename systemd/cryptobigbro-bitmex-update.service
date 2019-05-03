@@ -1,0 +1,7 @@
+[Unit]
+Description=Update cryptobigbro OHLCV CSV files and the github repository associated to it for bitmex exchange
+
+[Service]
+User=c2ba
+Type=oneshot
+ExecStart=bash $CRYPTOBIGBRO_PATH_TO_CODE/systemd/cryptobigbro-update.sh bitmex
