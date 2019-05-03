@@ -44,7 +44,13 @@ def parse_cli_args():
 
     return parser.parse_args()
 
-if __name__ == "__main__":
+def to_comma_separated_string(container):
+    s = ""
+    for e in container:
+        s += e + ","
+    return s[:-1]
+
+def main():
     # pp = pprint.PrettyPrinter(indent=4)
 
     args = parse_cli_args()
@@ -56,7 +62,7 @@ if __name__ == "__main__":
     }
 
     if args.action == "list-exchanges":
-        print(list(exchanges.keys()))
+        print(to_comma_separated_string(exchanges.keys()))
         exit(0)
 
     if args.exchange in exchanges.keys():
@@ -66,11 +72,11 @@ if __name__ == "__main__":
         exit(-1)
 
     if args.action == "list-instruments":
-        print(exchange.get_instruments())
+        print(to_comma_separated_string(exchange.get_instruments()))
         exit(0)
     
     if args.action == "list-timeframes":
-        print(exchange.get_timeframes())
+        print(to_comma_separated_string(exchange.get_timeframes()))
         exit(0)
 
     assert(args.action == "fetch-ohlcv")
@@ -121,3 +127,6 @@ if __name__ == "__main__":
                 since = datetime.fromtimestamp(df.close_timestamp_utc.values[-1], timezone.utc)
 
                 time.sleep(1)  # ensure we don't flood exchange API with requests
+
+if __name__ == "__main__":
+    main()
