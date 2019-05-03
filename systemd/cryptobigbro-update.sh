@@ -9,4 +9,4 @@ do
 	git add *
 	git commit -a -m "Update OHLCV data for exchange ${EXCHANGE} and instrument ${i}"
 done
-git push
+git push -u origin master
