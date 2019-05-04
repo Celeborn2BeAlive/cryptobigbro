@@ -3,7 +3,7 @@ Description=Run 'python cryptobigbro fetch-ohlcv coinbasepro' every quarter
 Requires=cryptobigbro-coinbasepro-update.service
 
 [Timer]
-OnCalendar=*-*-* *:0,15,30,45
+OnCalendar=*-*-* *:0,30
 
 [Install]
 WantedBy=timers.target
