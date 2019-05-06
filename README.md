@@ -42,4 +42,4 @@ Timestamps are in seconds and in UTC timezone.
 
 - Better README.md
 - Store information about each product in a json file
-- Optimization: ask the time of the server first and avoid requests that would not send any data
+- Check how to get api rate limit with each python api

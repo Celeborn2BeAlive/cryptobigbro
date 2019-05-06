@@ -9,15 +9,15 @@ class CoinbaseProExchange:
     def __init__(self):
         self._client = cbpro.PublicClient()
     
-    def utctimestamp(self):
+    def get_utc_timestamp(self):
         return int(self._client.get_time()['epoch'])
     
-    def utcnow(self):
-        return datetime.fromtimestamp(self.utctimestamp(), timezone.utc)
+    def get_utc_time(self):
+        return datetime.fromtimestamp(self.get_utc_timestamp(), timezone.utc)
 
     def fetch_ohlcv(self, timeframe, since, instrument):
         # Binance include the current (and unfinished) bar in the fetched data, we need to compute endTime to remove it
-        endTime = compute_end_timestamp(self.utcnow(), timeframe)
+        endTime = compute_end_timestamp(self.get_utc_time(), timeframe)
         td = timedelta(timeframe)
         td_1s = timedelta('1s')
         result = self._client.get_product_historic_rates(

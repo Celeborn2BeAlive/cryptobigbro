@@ -5,4 +5,4 @@ Description=Update cryptobigbro OHLCV CSV files and the github repository associ
 User=c2ba
 Type=oneshot
 EnvironmentFile=/etc/environment
-ExecStart=bash /home/c2ba/cryptobigbro-update.sh coinbasepro
+ExecStart=bash /home/c2ba/cryptobigbro-update.sh coinbasepro 500

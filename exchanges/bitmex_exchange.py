@@ -1,6 +1,8 @@
 import bitmex
 import bravado
 import pandas as pd
+import requests
+from datetime import datetime, timezone
 
 from utils import timedelta, candle_list_to_dataframe
 
@@ -11,6 +13,19 @@ class BitmexExchange:
         self._client = bitmex.bitmex(test=False)
         self._limit = 750 # Max number of candles that bitmex is sending
     
+    def get_utc_timestamp(self):
+        r = requests.get("https://www.bitmex.com/api/v1")
+        if r.status_code != 200:
+            raise RuntimeError("Impossible to reach https://www.bitmex.com/api/v1.")
+        print(r.headers['x-ratelimit-limit'])
+        print(r.headers['x-ratelimit-remaining'])
+        print(r.headers['x-ratelimit-reset'])
+        j = r.json()
+        return int(j["timestamp"] / 1000)
+    
+    def get_utc_time(self):
+        return datetime.fromtimestamp(self.get_utc_timestamp(), timezone.utc)
+
     def fetch_ohlcv(self, timeframe, since, instrument):
         # adding one time interval because Bitmex api is returning us close times instead of open times
         closeDate = since + timedelta(timeframe)

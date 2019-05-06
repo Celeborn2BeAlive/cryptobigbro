@@ -1,5 +1,5 @@
 [Unit]
-Description=Run 'python cryptobigbro fetch-ohlcv coinbasepro' every quarter
+Description=Run 'python cryptobigbro fetch-ohlcv coinbasepro' every 30 min
 Requires=cryptobigbro-coinbasepro-update.service
 
 [Timer]

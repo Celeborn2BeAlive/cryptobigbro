@@ -1,7 +1,7 @@
 import argparse, os, time
 import pandas as pd
 from datetime import datetime, timezone
-from utils import ensure_mkdir, origin_of_time
+from utils import ensure_mkdir, origin_of_time, timedelta
 from exchanges import make_bitmex_exchange, make_binance_exchange, make_coinbasepro_exchange
 import pprint
 
@@ -29,6 +29,12 @@ def parse_cli_args():
         type=string_list_arg,
         help='A comma separated list of timeframes. If not provided, all timeframes provided by the exchange will be fetched.'
     )
+    fetch_ohlcv_parser.add_argument(
+        '--delay',
+        type=int,
+        default=1000,
+        help='Time to wait in milliseconds between requests. Default to 1000.'
+    )
 
     list_instruments_parser = commands.add_parser("list-instruments")
     list_instruments_parser.add_argument(
@@ -37,6 +43,16 @@ def parse_cli_args():
 
     list_timeframes_parser = commands.add_parser("list-timeframes")
     list_timeframes_parser.add_argument(
+        'exchange', help='Name of the exchange, eg. bitmex, binance, coinbasepro, etc.'
+    )
+
+    time_parser = commands.add_parser("time")
+    time_parser.add_argument(
+        'exchange', help='Name of the exchange, eg. bitmex, binance, coinbasepro, etc.'
+    )
+
+    timestamp_parser = commands.add_parser("timestamp")
+    timestamp_parser.add_argument(
         'exchange', help='Name of the exchange, eg. bitmex, binance, coinbasepro, etc.'
     )
 
@@ -71,6 +87,14 @@ def main():
         print("Unsupported exchange {}".format(args.exchange))
         exit(-1)
 
+    if args.action == "time":
+        print(exchange.get_utc_time())
+        exit(0)
+
+    if args.action == "timestamp":
+        print(exchange.get_utc_timestamp())
+        exit(0)
+
     if args.action == "list-instruments":
         print(to_comma_separated_string(exchange.get_instruments()))
         exit(0)
@@ -84,12 +108,13 @@ def main():
     ensure_mkdir(args.folder)
 
     timeframes = args.timeframes if args.timeframes else exchange.get_timeframes()
-    instruments = args.instruments if args.instruments else exchange.get_instruments();
+    instruments = args.instruments if args.instruments else exchange.get_instruments()
 
     exchange_timeframes = exchange.get_timeframes()
-    exchange_instruments = exchange.get_instruments();
+    exchange_instruments = exchange.get_instruments()
+    exchange_time = exchange.get_utc_time()
 
-    print("Exchange {}.".format(args.exchange))
+    print("Exchange {} at time {}.".format(args.exchange, exchange_time))
 
     for instrument in instruments:
         if not instrument in exchange_instruments:
@@ -113,6 +138,11 @@ def main():
                 df = pd.read_csv(path_to_csv_file, index_col='open_timestamp_utc')
                 since = datetime.fromtimestamp(df.close_timestamp_utc.values[-1], timezone.utc)
                 
+            td = timedelta(tf)
+            if exchange_time < since + td:
+                print("\t\t-- Exchange time is {} and next candle time is {}, no request needed.".format(exchange_time, since + td))
+                continue 
+
             while True:
                 print("\t\t-- Fetching candles since {}".format(since))
                 df = exchange.fetch_ohlcv(timeframe=tf, since=since, instrument=instrument)
@@ -126,7 +156,7 @@ def main():
                 df.to_csv(path_to_csv_file, index_label='open_timestamp_utc', mode='a', header=not os.path.exists(path_to_csv_file))
                 since = datetime.fromtimestamp(df.close_timestamp_utc.values[-1], timezone.utc)
 
-                time.sleep(1)  # ensure we don't flood exchange API with requests
+                time.sleep(args.delay / 1000.0)  # ensure we don't flood exchange API with requests
 
 if __name__ == "__main__":
     main()
