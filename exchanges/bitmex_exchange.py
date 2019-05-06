@@ -16,10 +16,10 @@ class BitmexExchange:
     def get_utc_timestamp(self):
         r = requests.get("https://www.bitmex.com/api/v1")
         if r.status_code != 200:
-            raise RuntimeError("Impossible to reach https://www.bitmex.com/api/v1.")
-        print(r.headers['x-ratelimit-limit'])
-        print(r.headers['x-ratelimit-remaining'])
-        print(r.headers['x-ratelimit-reset'])
+            raise RuntimeError("Unable to reach https://www.bitmex.com/api/v1.")
+        # print(r.headers['x-ratelimit-limit'])
+        # print(r.headers['x-ratelimit-remaining'])
+        # print(r.headers['x-ratelimit-reset'])
         j = r.json()
         return int(j["timestamp"] / 1000)
     

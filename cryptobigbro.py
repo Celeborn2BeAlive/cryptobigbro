@@ -1,7 +1,7 @@
 import argparse, os, time
 import pandas as pd
 from datetime import datetime, timezone
-from utils import ensure_mkdir, origin_of_time, timedelta
+from utils import ensure_mkdir, origin_of_time, timedelta, compute_end_timestamp
 from exchanges import make_bitmex_exchange, make_binance_exchange, make_coinbasepro_exchange
 import pprint
 
@@ -137,9 +137,9 @@ def main():
                 print("\t\t-- Loading existing history from file {} to get next timestamp.".format(path_to_csv_file))
                 df = pd.read_csv(path_to_csv_file, index_col='open_timestamp_utc')
                 since = datetime.fromtimestamp(df.close_timestamp_utc.values[-1], timezone.utc)
-                
-            td = timedelta(tf)
-            if exchange_time < since + td:
+
+            next_open_date = compute_end_timestamp(since, tf) + timedelta('1s')
+            if exchange_time < next_open_date:
                 print("\t\t-- Exchange time is {} and next candle time is {}, no request needed.".format(exchange_time, since + td))
                 continue 
 

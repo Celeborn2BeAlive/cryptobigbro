@@ -59,7 +59,7 @@ def candle_list_to_dataframe(candles):
 def compute_end_timestamp(exchange_now, timeframe):
     if timeframe == "1M":
         # Special case for month because it has not fixed timedelta
-        return datetime(exchange_now.year, exchange_now.month, 1) - timedelta('1s')
+        return datetime(exchange_now.year, exchange_now.month, 1, tzinfo=timezone.utc) - timedelta('1s')
 
     td = timedelta(timeframe)
     start_of_current_bar = int(exchange_now.timestamp() / td.total_seconds()) * td.total_seconds()
