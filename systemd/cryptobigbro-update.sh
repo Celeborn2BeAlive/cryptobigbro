@@ -6,7 +6,7 @@ source $CRYPTOBIGBRO_PATH_TO_CODE/venv/bin/activate
 instruments=`python $CRYPTOBIGBRO_PATH_TO_CODE/cryptobigbro.py list-instruments $EXCHANGE`
 for i in ${instruments//,/ }
 do
-	python $CRYPTOBIGBRO_PATH_TO_CODE/cryptobigbro.py fetch-ohlcv $EXCHANGE . --instruments ${i} --delay ${2}
+	python $CRYPTOBIGBRO_PATH_TO_CODE/cryptobigbro.py fetch-ohlcv $EXCHANGE . --instruments ${i} --delay ${DELAY}
 done
 git add *
 git commit -a -m "Update OHLCV data."
