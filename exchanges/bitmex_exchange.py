@@ -12,7 +12,23 @@ class BitmexExchange:
     def __init__(self):
         self._client = bitmex.bitmex(test=False)
         self._limit = 750 # Max number of candles that bitmex is sending
-    
+
+        # Todo: replace usage of bitmex bravado API with simple requests:
+        # d = datetime(year=2017, month=1, day=2, hour=0, minute=6, tzinfo=timezone.utc)
+
+        # params = (
+        #     ('binSize', '1m'),
+        #     ('symbol', 'XBTUSD'),
+        #     ('count', 750),
+        #     ('startTime', str(d))
+        # )
+
+        # r = requests.get("https://www.bitmex.com/api/v1/trade/bucketed", params=params)
+        # if r.status_code != 200:
+        #     raise RuntimeError("Unable to reach https://www.bitmex.com/api/v1/trade/bucketed.")
+        # j = r.json()
+        # print(j[0])
+
     def get_utc_timestamp(self):
         r = requests.get("https://www.bitmex.com/api/v1")
         if r.status_code != 200:

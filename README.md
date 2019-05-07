@@ -43,3 +43,4 @@ Timestamps are in seconds and in UTC timezone.
 - Better README.md
 - Store information about each product in a json file
 - Check how to get api rate limit with each python api
+- Replace usage of bitmex bravado API with simple requests:
