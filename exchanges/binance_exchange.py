@@ -85,3 +85,6 @@ class BinanceExchange:
     
     def get_asset_info(self, asset):
         return self._assets[asset]
+    
+    def get_tickers(self):
+        return self._client.get_orderbook_tickers()

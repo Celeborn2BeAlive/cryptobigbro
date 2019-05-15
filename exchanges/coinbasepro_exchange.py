@@ -75,3 +75,11 @@ class CoinbaseProExchange:
                     precision += 1
                 return CryptoAssetInfo(c["id"], precision + 1, c)
         return None
+    
+    def get_tickers(self):
+        tickers = [
+            self._client.get_product_ticker(p) for p in self.get_instruments()
+        ]
+        for t in tickers:
+            t["time"] = datetime.strptime(t['time'].split(".")[0] + " UTC", '%Y-%m-%dT%H:%M:%S %Z').replace(tzinfo=timezone.utc)
+        return tickers

@@ -46,6 +46,11 @@ def parse_cli_args():
             'exchange', help='Name of the exchange, eg. bitmex, binance, coinbasepro, etc.'
         )
 
+    commands.add_parser("tickers") \
+        .add_argument(
+            'exchange', help='Name of the exchange, eg. bitmex, binance, coinbasepro, etc.'
+        )
+
     instrument_info_parser = commands.add_parser("instrument-info")
     instrument_info_parser.add_argument(
         'exchange', help='Name of the exchange, eg. bitmex, binance, coinbasepro, etc.'
@@ -118,6 +123,10 @@ def main():
 
     if args.action == "list-assets":
         print(to_comma_separated_string(exchange.get_assets()))
+        exit(0)
+
+    if args.action == "tickers":
+        print(exchange.get_tickers())
         exit(0)
 
     if args.action == "instrument-info":
