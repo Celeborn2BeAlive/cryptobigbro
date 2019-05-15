@@ -1,4 +1,4 @@
-import argparse, os, time
+import argparse, os, time, json
 import pandas as pd
 from datetime import datetime, timezone
 from utils import ensure_mkdir, origin_of_time, timedelta, compute_end_timestamp
@@ -36,9 +36,22 @@ def parse_cli_args():
         help='Time to wait in milliseconds between requests. Default to 1000.'
     )
 
-    list_instruments_parser = commands.add_parser("list-instruments")
-    list_instruments_parser.add_argument(
+    commands.add_parser("list-instruments") \
+        .add_argument(
+            'exchange', help='Name of the exchange, eg. bitmex, binance, coinbasepro, etc.'
+        )
+
+    commands.add_parser("list-assets") \
+        .add_argument(
+            'exchange', help='Name of the exchange, eg. bitmex, binance, coinbasepro, etc.'
+        )
+
+    instrument_info_parser = commands.add_parser("instrument-info")
+    instrument_info_parser.add_argument(
         'exchange', help='Name of the exchange, eg. bitmex, binance, coinbasepro, etc.'
+    )
+    instrument_info_parser.add_argument(
+        'instrument', help='Name of the instrument'
     )
 
     list_timeframes_parser = commands.add_parser("list-timeframes")
@@ -101,6 +114,25 @@ def main():
     
     if args.action == "list-timeframes":
         print(to_comma_separated_string(exchange.get_timeframes()))
+        exit(0)
+
+    if args.action == "list-assets":
+        print(to_comma_separated_string(exchange.get_assets()))
+        exit(0)
+
+    if args.action == "instrument-info":
+        exchange_instruments = exchange.get_instruments()
+        if not args.instrument in exchange_instruments:
+            print("[ERROR] Unsupported instrument {} for exchange {}.".format(args.instrument, args.exchange))
+            exit(-1)
+        instrument_info = exchange.get_instrument_info(args.instrument)
+        d = {
+            "instrument": instrument_info.__dict__
+        }
+        if args.exchange != "bitmex":
+            d["base_asset"] = exchange.get_asset_info(instrument_info.base_asset).__dict__
+            d["quote_asset"] = exchange.get_asset_info(instrument_info.quote_asset).__dict__
+        print(json.dumps(d, indent=4))
         exit(0)
 
     assert(args.action == "fetch-ohlcv")

@@ -2,6 +2,7 @@ from binance.client import Client as BinanceClient
 import pandas as pd
 from datetime import datetime, timezone
 from utils import candle_list_to_dataframe, timedelta, compute_end_timestamp
+from .crypto_assets import CryptoAssetInfo, CryptoInstrumentPairInfo
 
 # API used: https://github.com/sammchardy/python-binance
 
@@ -9,7 +10,16 @@ class BinanceExchange:
     def __init__(self):
         self._client = BinanceClient("", "")
         self._limit = 1000
+        self._exchange_info = self._client.get_exchange_info()
+        self._assets = {}
+        for s in self._exchange_info["symbols"]:
+            for k in ("baseAsset", "quoteAsset"):
+                if not s[k] in self._assets:
+                    self._assets[s[k]] = CryptoAssetInfo(s[k], s["baseAssetPrecision"], {})
     
+    def name(self):
+        return "binance"
+
     def get_utc_timestamp(self):
         return int(self._client.get_server_time()['serverTime'] / 1000)
 
@@ -64,6 +74,14 @@ class BinanceExchange:
         ]
     
     def get_instruments(self):
-        return [ 
-            _["symbol"] for _ in self._client.get_products()["data"] 
-        ]
+        return [ _["symbol"] for _ in self._exchange_info["symbols"]]
+
+    def get_assets(self):
+        return self._assets.keys()
+
+    def get_instrument_info(self, instrument):
+        info = self._client.get_symbol_info(instrument)
+        return CryptoInstrumentPairInfo(info["symbol"], self.name(), info["baseAsset"], info["quoteAsset"], "trading" if info["status"] == "TRADING" else "break", info)
+    
+    def get_asset_info(self, asset):
+        return self._assets[asset]

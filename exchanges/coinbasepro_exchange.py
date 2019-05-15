@@ -2,6 +2,7 @@ import cbpro
 import pandas as pd
 from datetime import datetime, timezone
 from utils import timedelta, candle_list_to_dataframe, compute_end_timestamp
+from .crypto_assets import CryptoAssetInfo, CryptoInstrumentPairInfo
 
 # API used: https://github.com/danpaquin/coinbasepro-python
 
@@ -9,6 +10,9 @@ class CoinbaseProExchange:
     def __init__(self):
         self._client = cbpro.PublicClient()
     
+    def name(self):
+        return "coinbasepro"
+
     def get_utc_timestamp(self):
         return int(self._client.get_time()['epoch'])
     
@@ -49,3 +53,25 @@ class CoinbaseProExchange:
     
     def get_instruments(self):
         return [ _["id"] for _ in self._client.get_products() ]
+    
+    def get_assets(self):
+        return [ _["id"] for _ in self._client.get_currencies() ]
+
+    def get_instrument_info(self, instrument):
+        products = self._client.get_products()
+        for p in products:
+            if p["id"] == instrument:
+                return CryptoInstrumentPairInfo(p["id"], self.name(), p["base_currency"], p["quote_currency"], "trading" if p["status"] == "online" else "break", p)
+        return None
+    
+    def get_asset_info(self, asset):
+        currencies = self._client.get_currencies()
+        for c in currencies:
+            if c["id"] == asset:
+                min_size = c["max_precision"]
+                frac = min_size.split(".")[1]
+                precision = 0
+                while frac[precision] == "0":
+                    precision += 1
+                return CryptoAssetInfo(c["id"], precision + 1, c)
+        return None
