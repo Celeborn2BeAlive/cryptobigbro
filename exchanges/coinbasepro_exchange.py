@@ -77,8 +77,9 @@ class CoinbaseProExchange:
         return None
     
     def get_tickers(self):
+        products = self._client.get_products()
         tickers = [
-            self._client.get_product_ticker(p) for p in self.get_instruments()
+            self._client.get_product_ticker(p["id"]) for p in products if p["status"] == "online"
         ]
         for t in tickers:
             t["time"] = datetime.strptime(t['time'].split(".")[0] + " UTC", '%Y-%m-%dT%H:%M:%S %Z').replace(tzinfo=timezone.utc)

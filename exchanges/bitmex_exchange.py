@@ -19,7 +19,7 @@ def bitmex_request_get(endpoint, params=None):
 class BitmexExchange:
     def __init__(self):
         self._limit = 750 # Max number of candles that bitmex is sending
-        self._instrument_info = { _["symbol"]: _ for _ in bitmex_request_get("/instrument") }
+        self._instrument_info = { _["symbol"]: _ for _ in bitmex_request_get("/instrument/active") }
     def name(self):
         return "bitmex"
 
@@ -74,3 +74,8 @@ class BitmexExchange:
     def get_instrument_info(self, instrument):
         info = self._instrument_info[instrument]
         return CryptoInstrumentInfo(info["symbol"], self.name(), "trading" if info["state"] == "Open" else "break", info)
+    
+    def get_tickers(self):
+        return [
+            bitmex_request_get("/orderBook/L2", params=(('symbol', instrument),('depth', "1"),)) for instrument,info in self._instrument_info.items() if info["state"] == "Open"
+        ]
