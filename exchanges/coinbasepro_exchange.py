@@ -33,6 +33,7 @@ class CoinbaseProExchange:
             result = reversed(result) # Coinbase pro is sending candles from newest to oldest, we need to reverse that
         except:
             print(result)
+            print(since.timestamp())
             raise
 
         candles = [
