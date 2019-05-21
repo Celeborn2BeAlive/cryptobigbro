@@ -29,8 +29,13 @@ class CoinbaseProExchange:
             granularity=int(td.total_seconds()),
             start=since.timestamp()
         )
-        result = reversed(result) # Coinbase pro is sending candles from newest to oldest, we need to reverse that
-        
+        try:
+            result = reversed(result) # Coinbase pro is sending candles from newest to oldest, we need to reverse that
+        except e:
+            print(result)
+            print(e)
+            raise
+
         candles = [
             {
                 "open_datetime_utc": datetime.fromtimestamp(int(data[0]), timezone.utc),
