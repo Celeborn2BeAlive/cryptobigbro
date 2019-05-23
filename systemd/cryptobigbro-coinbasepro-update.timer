@@ -4,7 +4,7 @@ Requires=cryptobigbro-coinbasepro-update.service
 
 [Timer]
 OnBootSec=0min
-OnCalendar=0/2:00:00
+OnCalendar=*-*-* *:00:00
 
 [Install]
 WantedBy=timers.target
