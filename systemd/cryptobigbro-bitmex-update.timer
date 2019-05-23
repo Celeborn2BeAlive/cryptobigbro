@@ -3,7 +3,6 @@ Description=Run 'python cryptobigbro fetch-ohlcv bitmex' every 4 hours
 Requires=cryptobigbro-bitmex-update.service
 
 [Timer]
-OnBootSec=0min
 OnCalendar=0/4:00:00
 
 [Install]

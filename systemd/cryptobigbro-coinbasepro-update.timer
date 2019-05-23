@@ -3,8 +3,7 @@ Description=Run 'python cryptobigbro fetch-ohlcv coinbasepro' every 2 hours
 Requires=cryptobigbro-coinbasepro-update.service
 
 [Timer]
-OnBootSec=0min
-OnCalendar=*-*-* *:00:00
+OnCalendar=0/2:00:00
 
 [Install]
 WantedBy=timers.target
