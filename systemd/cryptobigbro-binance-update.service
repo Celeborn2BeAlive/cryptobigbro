@@ -2,7 +2,7 @@
 Description=Update cryptobigbro OHLCV CSV files and the github repositories associated to it for binance exchange
 
 [Service]
-User=c2ba
+User=cryptobigbro
 Type=oneshot
 EnvironmentFile=/etc/environment
-ExecStart=bash /home/c2ba/cryptobigbro-update-binance.sh
+ExecStart=bash /home/cryptobigbro/cryptobigbro-update.sh binance 250 1M,1w,1d,1h,1m

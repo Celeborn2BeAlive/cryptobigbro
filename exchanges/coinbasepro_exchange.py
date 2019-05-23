@@ -27,12 +27,13 @@ class CoinbaseProExchange:
         result = self._client.get_product_historic_rates(
             instrument,
             granularity=int(td.total_seconds()),
-            start=since.timestamp()
+            start=since.strftime("%Y-%m-%dT%H:%M")
         )
         try:
             result = reversed(result) # Coinbase pro is sending candles from newest to oldest, we need to reverse that
         except:
             print(result)
+            print(since)
             print(since.timestamp())
             raise
 

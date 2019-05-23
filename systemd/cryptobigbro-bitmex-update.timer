@@ -1,9 +1,10 @@
 [Unit]
-Description=Run 'python cryptobigbro fetch-ohlcv bitmex' every hour
+Description=Run 'python cryptobigbro fetch-ohlcv bitmex' every 4 hours
 Requires=cryptobigbro-bitmex-update.service
 
 [Timer]
-OnCalendar=*-*-* *:00:00
+OnBootSec=0min
+OnCalendar=0/4:00:00
 
 [Install]
 WantedBy=timers.target
