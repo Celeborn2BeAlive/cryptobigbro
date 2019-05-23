@@ -5,4 +5,4 @@ Description=Update cryptobigbro OHLCV CSV files and the github repository associ
 User=cryptobigbro
 Type=oneshot
 EnvironmentFile=/etc/environment
-ExecStart=bash /home/cryptobigbro/cryptobigbro-update.sh bitmex 1000 1d,1h,1m
+ExecStart=bash /home/cryptobigbro/cryptobigbro/systemd/cryptobigbro-update.sh bitmex 1000 1d,1h,1m
