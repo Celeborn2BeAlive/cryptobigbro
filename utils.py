@@ -64,3 +64,19 @@ def compute_end_timestamp(exchange_now, timeframe):
     td = timedelta(timeframe)
     start_of_current_bar = int(exchange_now.timestamp() / td.total_seconds()) * td.total_seconds()
     return datetime.fromtimestamp(start_of_current_bar, timezone.utc) - timedelta('1s')
+
+def string_list_arg(string):
+    return string.split(',')
+
+def to_comma_separated_string(container):
+    s = ""
+    for e in container:
+        s += e + ","
+    return s[:-1]
+
+# period should be something like 1m, 1h, 2d, etc
+def period_to_seconds(period):
+    number = int(period[0:len(period) - 1])
+    suffix = period[len(period) - 1:]
+    multiplier = timedeltas_timeframe_suffixes[suffix].total_seconds()
+    return number * multiplier

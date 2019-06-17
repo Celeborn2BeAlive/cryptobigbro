@@ -7,11 +7,26 @@ from .crypto_assets import CryptoAssetInfo, CryptoInstrumentPairInfo
 # API used: https://github.com/danpaquin/coinbasepro-python
 
 class CoinbaseProExchange:
-    def __init__(self):
+    def __init__(self, api_key=None):
         self._client = cbpro.PublicClient()
+        if api_key:
+            self._private_client = cbpro.AuthenticatedClient(api_key["apiKey"], api_key["apiSecret"], api_key["passPhrase"])
+        else:
+            self._private_client = False
     
     def name(self):
         return "coinbasepro"
+
+    def get_accounts(self):
+        assert(self.is_authenticated())
+        accounts = self._private_client.get_accounts()
+        for a in accounts:
+            for k in ['available', 'balance', 'hold']:
+                a[k] = float(a[k])
+        return accounts
+
+    def is_authenticated(self):
+        return self._private_client != None
 
     def get_utc_timestamp(self):
         return int(self._client.get_time()['epoch'])
@@ -90,3 +105,6 @@ class CoinbaseProExchange:
         for t in tickers:
             t["time"] = datetime.strptime(t['time'].split(".")[0] + " UTC", '%Y-%m-%dT%H:%M:%S %Z').replace(tzinfo=timezone.utc)
         return tickers
+    
+    def get_price(self, base, quote):
+        return float(self._client.get_product_ticker(base + '-' + quote)['price'])

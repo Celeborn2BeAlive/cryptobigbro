@@ -8,5 +8,5 @@ def make_bitmex_exchange():
 def make_binance_exchange():
     return BinanceExchange()
 
-def make_coinbasepro_exchange():
-    return CoinbaseProExchange()
+def make_coinbasepro_exchange(api_key=None):
+    return CoinbaseProExchange(api_key)

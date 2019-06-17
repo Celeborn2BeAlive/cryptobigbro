@@ -1,12 +1,9 @@
 import argparse, os, time, json
 import pandas as pd
 from datetime import datetime, timezone
-from utils import ensure_mkdir, origin_of_time, timedelta, compute_end_timestamp
+from utils import ensure_mkdir, origin_of_time, timedelta, compute_end_timestamp, string_list_arg, to_comma_separated_string
 from exchanges import make_bitmex_exchange, make_binance_exchange, make_coinbasepro_exchange
 import pprint
-
-def string_list_arg(string):
-    return string.split(',')
 
 def parse_cli_args():
     parser = argparse.ArgumentParser(description='Crypto Big Bro - Spy OHLCV data from crypto exchanges.')
@@ -77,12 +74,6 @@ def parse_cli_args():
     list_exchanges_parser = commands.add_parser("list-exchanges")
 
     return parser.parse_args()
-
-def to_comma_separated_string(container):
-    s = ""
-    for e in container:
-        s += e + ","
-    return s[:-1]
 
 def main():
     # pp = pprint.PrettyPrinter(indent=4)
