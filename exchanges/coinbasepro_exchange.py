@@ -6,6 +6,11 @@ from .crypto_assets import CryptoAssetInfo, CryptoInstrumentPairInfo
 
 # API used: https://github.com/danpaquin/coinbasepro-python
 
+def format_account_dict(a):
+    for k in ['available', 'balance', 'hold']:
+        a[k] = float(a[k])
+    return a
+
 class CoinbaseProExchange:
     def __init__(self, api_key=None):
         self._client = cbpro.PublicClient()
@@ -21,9 +26,13 @@ class CoinbaseProExchange:
         assert(self.is_authenticated())
         accounts = self._private_client.get_accounts()
         for a in accounts:
-            for k in ['available', 'balance', 'hold']:
-                a[k] = float(a[k])
+            a = format_account_dict(a)
         return accounts
+
+    def get_account(self, account_id):
+        assert(self.is_authenticated())
+        account = self._private_client.get_account(account_id)
+        return format_account_dict(account)
 
     def is_authenticated(self):
         return self._private_client != None
