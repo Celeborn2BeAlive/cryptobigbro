@@ -1,13 +1,13 @@
 import argparse, json
 from flask import Flask, render_template
 import time, threading
-from threading import Thread
+from threading import Thread, Timer
 from pprint import pprint
 from exchanges import make_coinbasepro_exchange
 from utils import period_to_seconds
 from datetime import datetime, timedelta
 import dateutil.parser
-import math
+import math, time
 
 def parse_cli_args():
     parser = argparse.ArgumentParser(description='Crypto Big Bro Investor - Buy cryptocurrencies with FIAT monney')
@@ -33,24 +33,32 @@ class InvestorThread(Thread):
         self.cancel_after = config["cancelAfter"]
         self.invest_count_limit = config["investCountLimit"] if "investCountLimit" in config else 0
 
+        self.get_seconds_remaining()
+
+        self.invest_count = 0
+
+    def get_seconds_remaining(self):
+        seconds_since_origin = time.time() - self.invest_time_origin.timestamp()
+        previous_period_idx = math.floor(seconds_since_origin / self.invest_period_seconds)
+        self.next_period_timestamp = self.invest_time_origin.timestamp() + (previous_period_idx + 1) * self.invest_period_seconds
+        self.current_timestamp = time.time()
+        self.seconds_remaining = max(0, self.next_period_timestamp -  self.current_timestamp)
+        return self.seconds_remaining
+
     def run(self):
         accounts = self.exchange.get_accounts()
         fiat_currency_account_id = next(filter(lambda a: a["currency"] == "EUR", accounts))["id"]
 
-        self.current_timestamp = self.exchange.get_utc_time().timestamp() - self.invest_time_origin.timestamp()
-        previous_period_idx = math.floor(self.current_timestamp / self.invest_period_seconds)
-        self.next_period_timestamp = self.invest_time_origin.timestamp() + (previous_period_idx + 1) * self.invest_period_seconds
+        self.get_seconds_remaining()
 
         assets_to_buy = []
         pending_orders = []
 
-        self.invest_count = 0
-
         loop_index = 0
         while not self.done:
             loop_index += 1
-            self.current_timestamp = self.exchange.get_utc_time().timestamp()
-            self.seconds_remaining = self.next_period_timestamp -  self.current_timestamp
+            self.current_timestamp = time.time()
+            self.seconds_remaining = max(0, self.next_period_timestamp -  self.current_timestamp)
             print(self.seconds_remaining)
 
             if len(pending_orders) > 0:
@@ -126,6 +134,7 @@ def main():
     exchange = make_coinbasepro_exchange(api_key=config)
 
     investor = InvestorThread(exchange, config)
+
     app = make_flask_app(investor)
 
     investor.start()
