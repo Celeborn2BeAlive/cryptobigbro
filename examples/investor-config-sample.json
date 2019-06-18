@@ -1,0 +1,18 @@
+{
+    "exchange": {
+        "name": "coinbasepro",
+        "apiKey": "PUT-API-KEY-HERE",
+        "apiSecret": "PUT-API-SECRET-HERE",
+        "passPhrase": "PUT-API-PASSPHRASE-HERE"
+    },
+    "investTimeOrigin": "01 Jan 1970 00:00:00 GMT",
+    "investPeriod": "1w",
+    "fiatCurrency": "EUR",
+    "minFiatCurrency": 1,
+    "investAmount": {
+        "BTC": 5,
+        "ETH": 5
+    },
+    "cancelAfter": "hour",
+    "fake": true
+}
