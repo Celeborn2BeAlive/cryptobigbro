@@ -16,6 +16,9 @@ class CoinbaseProExchange:
         self._client = cbpro.PublicClient()
         if api_key:
             self._private_client = cbpro.AuthenticatedClient(api_key["apiKey"], api_key["apiSecret"], api_key["passPhrase"])
+            accounts = self._private_client.get_accounts()
+            if "message" in accounts:
+                raise RuntimeError(accounts["message"])
         else:
             self._private_client = False
     

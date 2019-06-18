@@ -5,7 +5,7 @@ from threading import Thread
 from pprint import pprint
 from exchanges import make_coinbasepro_exchange
 from utils import period_to_seconds
-from datetime import datetime
+from datetime import datetime, timedelta
 import dateutil.parser
 import math
 
@@ -24,10 +24,9 @@ class InvestorThread(Thread):
         self.exchange = exchange
         self.config = config
         self.invest_period_seconds = period_to_seconds(config['investPeriod'])
-        self.loop_period_seconds = period_to_seconds(config['loopPeriod']) # not used: bad idea
         self.invest_amount = config["investAmount"]
-        self.base_currency = config["baseCurrency"]
-        self.limit_base_currency = config["limitBaseCurrency"]
+        self.fiat_currency = config["fiatCurrency"]
+        self.min_fiat_currency = config["minFiatCurrency"]
         self.print_state_period = config["printStatePeriod"]
         self.fake = config["fake"] if "fake" in config else False
         self.invest_time_origin = dateutil.parser.parse(config["investTimeOrigin"])
@@ -45,19 +44,20 @@ class InvestorThread(Thread):
         assets_to_buy = []
         pending_orders = []
 
-        invest_count = 0
+        self.invest_count = 0
 
         loop_index = 0
         while not self.done:
             loop_index += 1
             self.current_timestamp = self.exchange.get_utc_time().timestamp()
             self.seconds_remaining = self.next_period_timestamp -  self.current_timestamp
+            print(self.seconds_remaining)
 
             if len(pending_orders) > 0:
                 pass # should find which orders are still open
 
             fiat_account = self.exchange.get_account(fiat_currency_account_id)
-            if fiat_account['balance'] < self.limit_base_currency:
+            if fiat_account['balance'] < self.min_fiat_currency:
                 print("Fiat account balance is too low")
                 continue
             
@@ -65,14 +65,13 @@ class InvestorThread(Thread):
             # Iterate on assets to buy and submit orders; if reject put it in remaining_assets_to_buy
             assets_to_buy = remaining_assets_to_buy
 
-            if len(assets_to_buy) == 0 and len(pending_orders) == 0 and self.seconds_remaining < 0 and \
-                (self.invest_count_limit == 0 or invest_count < self.invest_count_limit):
+            if len(assets_to_buy) == 0 and len(pending_orders) == 0 and self.seconds_remaining == 0 and \
+                (self.invest_count_limit == 0 or self.invest_count < self.invest_count_limit):
                 assets_to_buy = self.invest_amount.keys()
                 previous_period_idx = math.floor((self.current_timestamp - self.invest_time_origin.timestamp()) / self.invest_period_seconds)
                 self.next_period_timestamp = self.invest_time_origin.timestamp() + (previous_period_idx + 1) * self.invest_period_seconds
-                invest_count += 1
+                self.invest_count += 1
             
-            print(invest_count)
             time.sleep(1)
         print("Bye !")
 
@@ -81,7 +80,27 @@ def make_flask_app(investor):
 
     @app.route('/')
     def route_index():
-        return str(investor.invest_period_seconds)
+        next_buying_time = datetime.fromtimestamp(investor.next_period_timestamp)
+        total_seconds_remaining = investor.seconds_remaining
+        days = math.floor(total_seconds_remaining / period_to_seconds("1d"))
+        total_seconds_remaining -= days * period_to_seconds("1d")
+        hours = math.floor(total_seconds_remaining / period_to_seconds("1h"))
+        total_seconds_remaining -= hours * period_to_seconds("1h")
+        minutes = math.floor(total_seconds_remaining / period_to_seconds("1m"))
+        total_seconds_remaining -= minutes * period_to_seconds("1m")
+        seconds = total_seconds_remaining
+        return render_template('investor/index.html',
+            fake=investor.fake,
+            nextBuyingTime=str(next_buying_time),
+            days=days,
+            hours=hours,
+            minutes=minutes,
+            seconds=seconds,
+            investCount=investor.invest_count,
+            investCountLimit=investor.invest_count_limit,
+            assetInfo=[],
+            assetsToBuy=[]
+        )
 
     @app.route('/accounts')
     def route_accounts():

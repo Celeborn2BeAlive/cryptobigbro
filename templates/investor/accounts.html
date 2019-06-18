@@ -1,57 +1,30 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <title>Accounts</title>
-  <style>
-    * {
-        font-family: Helvetica;
-    }
-
-    table {
-        border-collapse: collapse;
-        width: 100%;
-    }
-
-    th, td {
-        text-align: left;
-        padding: 8px;
-    }
-
-    tr:nth-child(even) {
-        background-color: #f2f2f2;
-    }
-  </style></style>
-</head>
-<body>
-  <h1>Accounts</h1>
-  <table>
-    <thead>
-      <tr>
-          <th>Currency</th>
-          <th>Id</th>
-          <th>Balance</th>
-          <th>Available</th>
-          <th>Hold</th>
-          <th>Value</th>
-          <th>%</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for account in accounts %}
-      <tr>
-          <td>{{ account.currency }}</td>
-          <td>{{ account.id }}</td>
-          <td>{{ account.balance|round(2) if account.currency == 'EUR' else account.balance|round(8) }}</td>
-          <td>{{ account.available|round(2) if account.currency == 'EUR' else account.available|round(8) }}</td>
-          <td>{{ account.hold }}</td>
-          <td>{{ account.value|round(2) }}</td>
-          <td>{{ account.percentage|round(2) }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</body>
-</html>
+{% extends "investor/base.html" %}
+{% block body %}
+<h1>Accounts</h1>
+<table>
+  <thead>
+    <tr>
+        <th>Currency</th>
+        <th>Id</th>
+        <th>Balance</th>
+        <th>Available</th>
+        <th>Hold</th>
+        <th>Value</th>
+        <th>%</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for account in accounts %}
+    <tr>
+        <td>{{ account.currency }}</td>
+        <td>{{ account.id }}</td>
+        <td>{{ account.balance|round(2) if account.currency == 'EUR' else account.balance|round(8) }}</td>
+        <td>{{ account.available|round(2) if account.currency == 'EUR' else account.available|round(8) }}</td>
+        <td>{{ account.hold }}</td>
+        <td>{{ account.value|round(2) }}</td>
+        <td>{{ account.percentage|round(2) }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
