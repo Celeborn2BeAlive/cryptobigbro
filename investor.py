@@ -3,7 +3,7 @@ from flask import Flask, render_template
 import time, threading, math
 from threading import Thread, Event
 from pprint import pprint
-from exchanges import make_coinbasepro_exchange
+from exchanges import make_exchange
 from utils import period_to_seconds, seconds_to_days_hours_minutes_seconds
 from datetime import datetime, timedelta
 import dateutil.parser
@@ -121,7 +121,7 @@ def main():
     
     pprint(config)
 
-    exchange = make_coinbasepro_exchange(api_key=config)
+    exchange = make_exchange(config["exchange"])
 
     investor = InvestorThread(exchange, config)
 
