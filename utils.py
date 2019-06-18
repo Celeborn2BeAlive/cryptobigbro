@@ -80,3 +80,13 @@ def period_to_seconds(period):
     suffix = period[len(period) - 1:]
     multiplier = timedeltas_timeframe_suffixes[suffix].total_seconds()
     return number * multiplier
+
+def seconds_to_days_hours_minutes_seconds(total_seconds):
+    days = total_seconds // period_to_seconds("1d")
+    total_seconds = total_seconds % period_to_seconds("1d")
+    hours = total_seconds // period_to_seconds("1h")
+    total_seconds = total_seconds % period_to_seconds("1h")
+    minutes = total_seconds // period_to_seconds("1m")
+    total_seconds = total_seconds % period_to_seconds("1m")
+    seconds = total_seconds
+    return days, hours, minutes, seconds

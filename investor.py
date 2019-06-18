@@ -1,13 +1,12 @@
 import argparse, json
 from flask import Flask, render_template
-import time, threading
-from threading import Thread, Timer
+import time, threading, math
+from threading import Thread, Event
 from pprint import pprint
 from exchanges import make_coinbasepro_exchange
-from utils import period_to_seconds
+from utils import period_to_seconds, seconds_to_days_hours_minutes_seconds
 from datetime import datetime, timedelta
 import dateutil.parser
-import math, time
 
 def parse_cli_args():
     parser = argparse.ArgumentParser(description='Crypto Big Bro Investor - Buy cryptocurrencies with FIAT monney')
@@ -20,7 +19,6 @@ def parse_cli_args():
 class InvestorThread(Thread):
     def __init__(self, exchange, config):
         Thread.__init__(self)
-        self.done = False
         self.exchange = exchange
         self.config = config
         self.invest_period_seconds = period_to_seconds(config['investPeriod'])
@@ -37,73 +35,65 @@ class InvestorThread(Thread):
 
         self.invest_count = 0
 
+        self.event = Event()
+
     def get_seconds_remaining(self):
-        seconds_since_origin = time.time() - self.invest_time_origin.timestamp()
+        current_timestamp = time.time()
+        seconds_since_origin = current_timestamp - self.invest_time_origin.timestamp()
         previous_period_idx = math.floor(seconds_since_origin / self.invest_period_seconds)
-        self.next_period_timestamp = self.invest_time_origin.timestamp() + (previous_period_idx + 1) * self.invest_period_seconds
-        self.current_timestamp = time.time()
-        self.seconds_remaining = max(0, self.next_period_timestamp -  self.current_timestamp)
-        return self.seconds_remaining
+        next_period_timestamp = self.invest_time_origin.timestamp() + (previous_period_idx + 1) * self.invest_period_seconds
+        return next_period_timestamp -  current_timestamp, datetime.fromtimestamp(next_period_timestamp)
+
+    def invest(self):
+        print("Investing {}".format(self.invest_count))
+        print(time.time())
+        fiat_account = self.exchange.get_account(self.fiat_currency_account_id)
+        if fiat_account['balance'] < self.min_fiat_currency:
+            print("Fiat account balance is too low")
+            return
+
+        remaining_assets_to_buy = []
+        # Iterate on assets to buy and submit orders; if reject put it in remaining_assets_to_buy
+        self.assets_to_buy = remaining_assets_to_buy
+
+        while len(self.pending_orders) > 0:
+            pass
+        
+        self.invest_count += 1
 
     def run(self):
         accounts = self.exchange.get_accounts()
-        fiat_currency_account_id = next(filter(lambda a: a["currency"] == "EUR", accounts))["id"]
+        self.fiat_currency_account_id = next(filter(lambda a: a["currency"] == "EUR", accounts))["id"]
 
-        self.get_seconds_remaining()
+        self.assets_to_buy = []
+        self.pending_orders = []
 
-        assets_to_buy = []
-        pending_orders = []
+        seconds, next_period_datetime = self.get_seconds_remaining()
 
-        loop_index = 0
-        while not self.done:
-            loop_index += 1
-            self.current_timestamp = time.time()
-            self.seconds_remaining = max(0, self.next_period_timestamp -  self.current_timestamp)
-            print(self.seconds_remaining)
+        self.event.wait(seconds)
+        while not self.event.is_set():
+            self.invest()
+            self.event.wait(self.invest_period_seconds)
 
-            if len(pending_orders) > 0:
-                pass # should find which orders are still open
-
-            fiat_account = self.exchange.get_account(fiat_currency_account_id)
-            if fiat_account['balance'] < self.min_fiat_currency:
-                print("Fiat account balance is too low")
-                continue
-            
-            remaining_assets_to_buy = []
-            # Iterate on assets to buy and submit orders; if reject put it in remaining_assets_to_buy
-            assets_to_buy = remaining_assets_to_buy
-
-            if len(assets_to_buy) == 0 and len(pending_orders) == 0 and self.seconds_remaining == 0 and \
-                (self.invest_count_limit == 0 or self.invest_count < self.invest_count_limit):
-                assets_to_buy = self.invest_amount.keys()
-                previous_period_idx = math.floor((self.current_timestamp - self.invest_time_origin.timestamp()) / self.invest_period_seconds)
-                self.next_period_timestamp = self.invest_time_origin.timestamp() + (previous_period_idx + 1) * self.invest_period_seconds
-                self.invest_count += 1
-            
-            time.sleep(1)
         print("Bye !")
+
+    def stop(self):
+        self.event.set()
 
 def make_flask_app(investor):
     app = Flask(__name__)
 
     @app.route('/')
     def route_index():
-        next_buying_time = datetime.fromtimestamp(investor.next_period_timestamp)
-        total_seconds_remaining = investor.seconds_remaining
-        days = math.floor(total_seconds_remaining / period_to_seconds("1d"))
-        total_seconds_remaining -= days * period_to_seconds("1d")
-        hours = math.floor(total_seconds_remaining / period_to_seconds("1h"))
-        total_seconds_remaining -= hours * period_to_seconds("1h")
-        minutes = math.floor(total_seconds_remaining / period_to_seconds("1m"))
-        total_seconds_remaining -= minutes * period_to_seconds("1m")
-        seconds = total_seconds_remaining
+        total_seconds_remaining, next_buying_time = investor.get_seconds_remaining()
+        days, hours, minutes, seconds = seconds_to_days_hours_minutes_seconds(total_seconds_remaining)
         return render_template('investor/index.html',
             fake=investor.fake,
             nextBuyingTime=str(next_buying_time),
-            days=days,
-            hours=hours,
-            minutes=minutes,
-            seconds=seconds,
+            days=int(days),
+            hours=int(hours),
+            minutes=int(minutes),
+            seconds=int(seconds),
             investCount=investor.invest_count,
             investCountLimit=investor.invest_count_limit,
             assetInfo=[],
@@ -141,7 +131,7 @@ def main():
 
     app.run(debug=True, threaded=True, use_reloader=False)
 
-    investor.done = True
+    investor.stop()
     investor.join()
 
 main()
