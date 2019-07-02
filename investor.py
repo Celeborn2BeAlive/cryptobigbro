@@ -89,7 +89,6 @@ class InvestorThread(Thread):
 
     def invest(self):
         logging.info("Investing {}".format(self.invest_count))
-        logging.info(time.time())
         fiat_account = self.exchange.get_account(self.fiat_currency_account_id)
         if fiat_account['balance'] < self.min_fiat_currency:
             logging.error("Fiat account balance is too low")
@@ -104,7 +103,10 @@ class InvestorThread(Thread):
                 if "status" in result:
                     if result["status"] == "open":
                         open_orders.append(order)
+                    else:
+                        logging.info("Order filled<br>" + dict_to_html(result))
                 else:
+                    logging.info("Order canceled<br>" + dict_to_html(order))
                     # order cancelled, need to try again
                     self.assets_to_buy.append(order["product_id"].split("-")[0])
             self.pending_orders = open_orders
