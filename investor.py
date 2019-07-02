@@ -8,6 +8,7 @@ from utils import period_to_seconds, seconds_to_days_hours_minutes_seconds
 from datetime import datetime, timedelta
 import dateutil.parser
 import logging # https://realpython.com/python-logging/
+import os
 
 log_filename = "investor-" + datetime.now().strftime("%Y%m%d-%H%M%S") + ".html"
 
@@ -23,6 +24,7 @@ def parse_cli_args():
     
     parser.add_argument('config', type=str, help='Path to a json configuration file')
     parser.add_argument('-p', '--port', type=int, default=5000, help='Port for the web interface/API')
+    parser.add_argument('-l', '--log-dir', type=str, help='Path to a directory that should contains the log file')
 
     return parser.parse_args()
 
@@ -181,9 +183,14 @@ def make_flask_app(investor):
     return app
 
 def main():
-    logging.basicConfig(filename=log_filename, filemode='w', format='<p>%(asctime)s - %(levelname)s - %(message)s</p>', level=logging.INFO)
+    global log_filename
 
     args = parse_cli_args()
+    if args.log_dir:
+        log_filename = os.path.join(args.log_dir, log_filename)
+
+    logging.basicConfig(filename=log_filename, filemode='w', format='<p>%(asctime)s - %(levelname)s - %(message)s</p>', level=logging.INFO)
+    logging.info(f'Logging to file {log_filename}')
 
     with open(args.config) as f:
         config = json.load(f)
