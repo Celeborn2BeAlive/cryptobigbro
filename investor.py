@@ -207,7 +207,7 @@ def main():
 
     investor.start()
 
-    app.run(port=args.port, debug=True, threaded=True, use_reloader=False)
+    app.run(host= '0.0.0.0', port=args.port, debug=True, threaded=True, use_reloader=False)
 
     investor.stop()
     investor.join()
