@@ -56,7 +56,9 @@ class InvestorThread(Thread):
     def place_order(self, asset):
         instr = self.exchange.get_instrument_name(asset, self.fiat_currency)
         orders = self.exchange.get_order_book(instr, level=1)
-        buy_price = float(orders['bids'][0][0]) * 0.5 # half bid price to ensure testing for now (the order will not be immediately filled)
+        buy_price = float(orders['bids'][0][0]) 
+        if self.fake:
+            buy_price = buy_price * 0.5 # half bid price to ensure testing for now (the order will not be immediately filled)
         buy_price_base = round(buy_price * 100) / 100
         size = self.invest_amount[asset] / buy_price
         size_btc = round(size * 10e7) / 10e7
