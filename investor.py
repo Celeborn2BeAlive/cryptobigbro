@@ -45,6 +45,7 @@ class InvestorThread(Thread):
         self.get_seconds_remaining()
 
         self.invest_count = 0
+        self.state = ""
 
         self.event = Event()
 
@@ -129,10 +130,15 @@ class InvestorThread(Thread):
         print(f'Time until first investment: {seconds} seconds')
         logging.warning(f'Time until first investment: {seconds} seconds')
 
+        self.state = "waiting"
         self.event.wait(seconds)
         while not self.event.is_set():
             self.assets_to_buy = self.invest_amount.keys()
+
+            self.state = "investing"
             self.invest()
+
+            self.state = "waiting"
             self.event.wait(self.invest_period_seconds)
 
         self.cancel_pending_orders()
@@ -155,6 +161,7 @@ def make_flask_app(investor):
         days, hours, minutes, seconds = seconds_to_days_hours_minutes_seconds(total_seconds_remaining)
         return render_template('investor/index.html',
             fake=investor.fake,
+            state=investor.state,
             nextBuyingTime=str(next_buying_time),
             days=int(days),
             hours=int(hours),

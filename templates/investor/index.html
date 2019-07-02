@@ -3,13 +3,14 @@
 {% block body %}
 
 <p>
-{% if fake %}
-Fake mode enabled.
-{% else %}
-Real mode enabled
-{% endif %}
+  {% if fake %}
+  Fake mode enabled.
+  {% else %}
+  Real mode enabled
+  {% endif %}
 </p>
 
+<p>State: {{ state }}</p>
 <p>Next date buying: {{ nextBuyingTime }}.</p>
 <p>{{ days }} days {{ hours }} hours {{ minutes }} minutes {{ seconds }} seconds remaining.</p>
 
@@ -19,87 +20,87 @@ Real mode enabled
 <h2>Assets Info</h2>
 
 <table>
-    <thead>
-        <tr>
-            <th>currency</th>
-            <th>price</th>
-            <th>buySize</th>
-            <th>buyValue</th>
-            <th>wantedBuyValue</th>
-            <th>wantedSize</th>
-            <th>minSize</th>
-            <th>maxSize</th>
-            <th>minValue</th>
-            <th>maxValue</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for asset in assetInfo %}
-        <tr>
-            <td>{{ asset.currency }}</td>
-            <td>{{ asset.price }}</td>
-            <td>{{ asset.buySize }}</td>
-            <td>{{ asset.buyValue }}</td>
-            <td>{{ asset.wantedBuyValue }}</td>
-            <td>{{ asset.wantedSize }}</td>
-            <td>{{ asset.minSize }}</td>
-            <td>{{ asset.maxSize }}</td>
-            <td>{{ asset.minValue }}</td>
-            <td>{{ asset.maxValue }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
+  <thead>
+    <tr>
+      <th>currency</th>
+      <th>price</th>
+      <th>buySize</th>
+      <th>buyValue</th>
+      <th>wantedBuyValue</th>
+      <th>wantedSize</th>
+      <th>minSize</th>
+      <th>maxSize</th>
+      <th>minValue</th>
+      <th>maxValue</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for asset in assetInfo %}
+    <tr>
+      <td>{{ asset.currency }}</td>
+      <td>{{ asset.price }}</td>
+      <td>{{ asset.buySize }}</td>
+      <td>{{ asset.buyValue }}</td>
+      <td>{{ asset.wantedBuyValue }}</td>
+      <td>{{ asset.wantedSize }}</td>
+      <td>{{ asset.minSize }}</td>
+      <td>{{ asset.maxSize }}</td>
+      <td>{{ asset.minValue }}</td>
+      <td>{{ asset.maxValue }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
 </table>
 
 <h2>Assets to buy</h2>
 
 <ul>
-    {% for asset in assetsToBuy %}
-    <li>{{ asset }}</li>
-    {% endfor %}
+  {% for asset in assetsToBuy %}
+  <li>{{ asset }}</li>
+  {% endfor %}
 </ul>
 
 <h2>Pending Orders</h2>
 
 <table>
-    <thead>
-        <tr>
-            <th>id</th>
-            <th>price</th>
-            <th>size</th>
-            <th>product_id</th>
-            <th>side</th>
-            <th>stp</th>
-            <th>type</th>
-            <th>time_in_force</th>
-            <th>created_at</th>
-            <th>fill_fees</th>
-            <th>filled_size</th>
-            <th>executed_value</th>
-            <th>status</th>
-            <th>seconds_to_fill</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for order in pendingOrders %}
-        <tr>
-            <td>{{ order.id }}</td>
-            <td>{{ order.price }}</td>
-            <td>{{ order.size }}</td>
-            <td>{{ order.product_id }}</td>
-            <td>{{ order.side }}</td>
-            <td>{{ order.stp }}</td>
-            <td>{{ order.type }}</td>
-            <td>{{ order.time_in_force }}</td>
-            <td>{{ order.created_at }}</td>
-            <td>{{ order.fill_fees }}</td>
-            <td>{{ order.filled_size }}</td>
-            <td>{{ order.executed_value }}</td>
-            <td>{{ order.status }}</td>
-            <td>{{ order.seconds_to_fill }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
+  <thead>
+    <tr>
+      <th>id</th>
+      <th>price</th>
+      <th>size</th>
+      <th>product_id</th>
+      <th>side</th>
+      <th>stp</th>
+      <th>type</th>
+      <th>time_in_force</th>
+      <th>created_at</th>
+      <th>fill_fees</th>
+      <th>filled_size</th>
+      <th>executed_value</th>
+      <th>status</th>
+      <th>seconds_to_fill</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for order in pendingOrders %}
+    <tr>
+      <td>{{ order.id }}</td>
+      <td>{{ order.price }}</td>
+      <td>{{ order.size }}</td>
+      <td>{{ order.product_id }}</td>
+      <td>{{ order.side }}</td>
+      <td>{{ order.stp }}</td>
+      <td>{{ order.type }}</td>
+      <td>{{ order.time_in_force }}</td>
+      <td>{{ order.created_at }}</td>
+      <td>{{ order.fill_fees }}</td>
+      <td>{{ order.filled_size }}</td>
+      <td>{{ order.executed_value }}</td>
+      <td>{{ order.status }}</td>
+      <td>{{ order.seconds_to_fill }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
 </table>
 
 {% endblock %}
