@@ -108,7 +108,7 @@ class InvestorThread(Thread):
                 else:
                     logging.info("Order canceled<br>" + dict_to_html(order))
                     # order cancelled, need to try again
-                    self.assets_to_buy.append(order["product_id"].split("-")[0])
+                    # self.assets_to_buy.append(order["product_id"].split("-")[0]) # commented for now
             self.pending_orders = open_orders
 
             self.place_orders_for_assets_to_buy()
