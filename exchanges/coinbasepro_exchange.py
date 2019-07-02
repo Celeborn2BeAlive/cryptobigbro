@@ -120,3 +120,25 @@ class CoinbaseProExchange:
     
     def get_price(self, base, quote):
         return float(self._client.get_product_ticker(base + '-' + quote)['price'])
+    
+    def get_instrument_name(self, base, quote):
+        return base + '-' + quote
+    
+    def get_order_book(self, instrument, level=1):
+        return self._client.get_product_order_book(instrument, level=level)
+    
+    def clamp_to_min_max(self, instrument, size):
+        products = [ p for p in self._client.get_products() if p["id"] == instrument ]
+        min_size = float(products[0]["base_min_size"])
+        max_size = float(products[0]["base_max_size"])
+        return min(max(size, min_size), max_size)
+    
+    def place_buy_order(self, instrument, price, size, post_only, time_in_force, cancel_after):
+        return self._private_client.place_order(product_id=instrument, side='buy', order_type='limit', price=price, size=size, 
+            post_only=post_only, time_in_force=time_in_force, cancel_after=cancel_after)
+
+    def get_order(self, id):
+        return self._private_client.get_order(id)
+
+    def cancel_order(self, id):
+        return self._private_client.cancel_order(id)

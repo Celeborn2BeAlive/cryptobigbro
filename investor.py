@@ -7,12 +7,22 @@ from exchanges import make_exchange
 from utils import period_to_seconds, seconds_to_days_hours_minutes_seconds
 from datetime import datetime, timedelta
 import dateutil.parser
+import logging # https://realpython.com/python-logging/
+
+log_filename = "investor-" + datetime.now().strftime("%Y%m%d-%H%M%S") + ".html"
+
+def dict_to_html(d):
+    s = "<table>"
+    for k in d:
+        s += "<tr><td>" + str(k) + "</td><td>" + str(d[k]) + "</td></tr>"
+    s += "</table>"
+    return s
 
 def parse_cli_args():
     parser = argparse.ArgumentParser(description='Crypto Big Bro Investor - Buy cryptocurrencies with FIAT monney')
     
     parser.add_argument('config', type=str, help='Path to a json configuration file')
-    parser.add_argument('-p', '--port', type=int, help='Port for the web interface/API')
+    parser.add_argument('-p', '--port', type=int, default=5000, help='Port for the web interface/API')
 
     return parser.parse_args()
 
@@ -25,7 +35,6 @@ class InvestorThread(Thread):
         self.invest_amount = config["investAmount"]
         self.fiat_currency = config["fiatCurrency"]
         self.min_fiat_currency = config["minFiatCurrency"]
-        self.print_state_period = config["printStatePeriod"]
         self.fake = config["fake"] if "fake" in config else False
         self.invest_time_origin = dateutil.parser.parse(config["investTimeOrigin"])
         self.cancel_after = config["cancelAfter"]
@@ -44,20 +53,62 @@ class InvestorThread(Thread):
         next_period_timestamp = self.invest_time_origin.timestamp() + (previous_period_idx + 1) * self.invest_period_seconds
         return next_period_timestamp -  current_timestamp, datetime.fromtimestamp(next_period_timestamp)
 
-    def invest(self):
-        print("Investing {}".format(self.invest_count))
-        print(time.time())
-        fiat_account = self.exchange.get_account(self.fiat_currency_account_id)
-        if fiat_account['balance'] < self.min_fiat_currency:
-            print("Fiat account balance is too low")
-            return
+    def place_order(self, asset):
+        instr = self.exchange.get_instrument_name(asset, self.fiat_currency)
+        #order = self.exchange.place_buy_limit_order_at_bid_price(instr)
+        orders = self.exchange.get_order_book(instr, level=1)
+        buy_price = float(orders['bids'][0][0]) * 0.5
+        buy_price_base = round(buy_price * 100) / 100
+        size = self.invest_amount[asset] / buy_price
+        size_btc = round(size * 10e7) / 10e7
+        buy_size = self.exchange.clamp_to_min_max(instr, size_btc)
 
+        return self.exchange.place_buy_order(instrument=instr, price=buy_price_base, size=buy_size, post_only=True, time_in_force='GTT', cancel_after=self.cancel_after)
+
+    def place_orders_for_assets_to_buy(self):
         remaining_assets_to_buy = []
-        # Iterate on assets to buy and submit orders; if reject put it in remaining_assets_to_buy
+        for asset in self.assets_to_buy:
+            result = self.place_order(asset)
+            if result["status"] == "pending" or result["status"] == "open":
+                self.pending_orders.append(result)
+            else:
+                logging.warning(f'Unknown status {result["status"]}')
+            logging.info("Place order<br>" + dict_to_html(result))
+
         self.assets_to_buy = remaining_assets_to_buy
 
-        while len(self.pending_orders) > 0:
-            pass
+    def cancel_pending_orders(self):
+        for order in self.pending_orders:
+            try:
+                self.exchange.cancel_order(order["id"])
+            except e:
+                logging.error(f'{e}')
+
+    def invest(self):
+        logging.info("Investing {}".format(self.invest_count))
+        logging.info(time.time())
+        fiat_account = self.exchange.get_account(self.fiat_currency_account_id)
+        if fiat_account['balance'] < self.min_fiat_currency:
+            logging.error("Fiat account balance is too low")
+            return
+
+        self.place_orders_for_assets_to_buy()
+
+        while len(self.pending_orders) > 0 and not self.event.is_set():
+            open_orders = []
+            for order in self.pending_orders:
+                result = self.exchange.get_order(order["id"])
+                if "status" in result:
+                    if result["status"] == "open":
+                        open_orders.append(order)
+                else:
+                    # order cancelled, need to try again
+                    self.assets_to_buy.append(order["product_id"].split("-")[0])
+            self.pending_orders = open_orders
+
+            self.place_orders_for_assets_to_buy()
+
+            time.sleep(1)
         
         self.invest_count += 1
 
@@ -70,18 +121,28 @@ class InvestorThread(Thread):
 
         seconds, next_period_datetime = self.get_seconds_remaining()
 
+        print(f'Time until first investment: {seconds} seconds')
+        logging.warning(f'Time until first investment: {seconds} seconds')
+
         self.event.wait(seconds)
         while not self.event.is_set():
+            self.assets_to_buy = self.invest_amount.keys()
             self.invest()
             self.event.wait(self.invest_period_seconds)
 
-        print("Bye !")
+        self.cancel_pending_orders()
+        logging.info("Bye !")
 
     def stop(self):
         self.event.set()
 
 def make_flask_app(investor):
     app = Flask(__name__)
+
+    # Disable werkzeug logging
+    app.logger.disabled = True
+    log = logging.getLogger('werkzeug')
+    log.disabled = True
 
     @app.route('/')
     def route_index():
@@ -111,9 +172,16 @@ def make_flask_app(investor):
             a['percentage'] = 100.0 * a['value'] / total_value
         return render_template('investor/accounts.html', accounts=accounts)
 
+    @app.route('/log')
+    def route_log():
+        with open(log_filename) as f:
+            return "".join(reversed(f.readlines()))
+
     return app
 
 def main():
+    logging.basicConfig(filename=log_filename, filemode='w', format='<p>%(asctime)s - %(levelname)s - %(message)s</p>', level=logging.INFO)
+
     args = parse_cli_args()
 
     with open(args.config) as f:
@@ -129,7 +197,7 @@ def main():
 
     investor.start()
 
-    app.run(debug=True, threaded=True, use_reloader=False)
+    app.run(port=args.port, debug=True, threaded=True, use_reloader=False)
 
     investor.stop()
     investor.join()
