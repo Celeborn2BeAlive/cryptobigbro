@@ -13,15 +13,16 @@ def parse_cli_args():
     return parser.parse_args()
 
 class CpbroHistory:
-    def __init__(self):
-        self.accounts = {}
-        self.orders = {}
+    def __init__(self, exchange):
+        self.accounts = []
+        self.update(exchange)
     
     def update(self, exchange):
-        accounts = exchange.get_accounts()
-        pprint(accounts)
+        self.accounts = exchange.get_accounts()
+        for a in self.accounts:
+            a["history"] = exchange.get_account_history(a["id"])
 
-def make_flask_app(exchange):
+def make_flask_app(exchange, history):
     app = Flask(__name__)
 
     @app.route('/')
@@ -35,6 +36,12 @@ def make_flask_app(exchange):
             a['percentage'] = 100.0 * a['value'] / total_value
         return render_template('investor/accounts.html', accounts=accounts)
 
+    @app.route('/history/<account_id>')
+    def route_history(account_id):
+        account = exchange.get_account(account_id)
+        history = exchange.get_account_history(account_id)
+        return render_template('investor/history.html', account=account, history=history)
+
     return app
 
 def main():
@@ -46,12 +53,10 @@ def main():
     pprint(config)
 
     exchange = make_exchange(config["exchange"])
-    history = CpbroHistory()
-    history.update(exchange)
-    return
+    history = CpbroHistory(exchange)
 
-    app = make_flask_app(exchange)
+    app = make_flask_app(exchange, history)
 
-    app.run(host= '0.0.0.0', port=args.port, debug=True, threaded=True, use_reloader=False)
+    app.run(host='0.0.0.0', port=args.port, debug=True, threaded=True, use_reloader=False)
 
 main()

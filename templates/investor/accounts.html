@@ -17,7 +17,7 @@
     {% for account in accounts %}
     <tr>
         <td>{{ account.currency }}</td>
-        <td>{{ account.id }}</td>
+        <td><a href="/history/{{ account.id }}">{{ account.id }}</a></td>
         <td>{{ account.balance|round(2) if account.currency == 'EUR' else account.balance|round(8) }}</td>
         <td>{{ account.available|round(2) if account.currency == 'EUR' else account.available|round(8) }}</td>
         <td>{{ account.hold }}</td>
