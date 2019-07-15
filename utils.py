@@ -90,3 +90,6 @@ def seconds_to_days_hours_minutes_seconds(total_seconds):
     total_seconds = total_seconds % period_to_seconds("1m")
     seconds = total_seconds
     return days, hours, minutes, seconds
+
+def list_to_dict(l, key):
+    return { e[key]: e for e in l }

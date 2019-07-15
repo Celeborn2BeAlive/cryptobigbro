@@ -2,6 +2,7 @@ import argparse, json
 from flask import Flask, render_template
 from pprint import pprint
 from exchanges import make_exchange
+from utils import list_to_dict
 
 def parse_cli_args():
     parser = argparse.ArgumentParser(description='Crypto Big Bro Coinbasepro Account History')
@@ -14,15 +15,22 @@ def parse_cli_args():
 
 class CpbroHistory:
     def __init__(self, exchange):
-        self.accounts = []
-        self.update(exchange)
+        self.histories = {} # for each account store its history
+        self.transfers = {} # for each account, the list of its transfers
     
-    def update(self, exchange):
-        self.accounts = exchange.get_accounts()
-        for a in self.accounts:
-            a["history"] = exchange.get_account_history(a["id"])
+    def update(self, exchange, account_id):
+        if not account_id in self.histories:
+            self.histories[account_id] = exchange.get_account_history(account_id)
+        else:
+            prev = self.histories[account_id][0]["id"] if len(self.histories[account_id]) > 0 else None
+            self.histories[account_id] = exchange.get_account_history(account_id, before=prev) + self.histories[account_id]
+        if not account_id in self.transfers:
+            self.transfers[account_id] = exchange.get_account_transfers(account_id)
+        else:
+            prev = self.transfers[account_id][0]["id"] if len(self.transfers[account_id]) > 0 else None
+            self.transfers[account_id] = exchange.get_account_transfers(account_id, before=prev) + self.transfers[account_id]
 
-def make_flask_app(exchange, history):
+def make_flask_app(exchange, cpbro_history):
     app = Flask(__name__)
 
     @app.route('/')
@@ -34,13 +42,19 @@ def make_flask_app(exchange, history):
             total_value += a['value']
         for a in accounts:
             a['percentage'] = 100.0 * a['value'] / total_value
+
+        for a in accounts:
+            cpbro_history.update(exchange, accounts['id'])
+
         return render_template('investor/accounts.html', accounts=accounts)
 
     @app.route('/history/<account_id>')
     def route_history(account_id):
+        cpbro_history.update(exchange, account_id)
         account = exchange.get_account(account_id)
-        history = exchange.get_account_history(account_id)
-        return render_template('investor/history.html', account=account, history=history)
+        history = cpbro_history.histories[account_id]
+        transfers = cpbro_history.transfers[account_id]
+        return render_template('investor/history.html', account=account, history=history, transfers=transfers)
 
     return app
 

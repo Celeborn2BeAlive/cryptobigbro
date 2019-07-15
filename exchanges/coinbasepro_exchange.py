@@ -37,13 +37,15 @@ class CoinbaseProExchange:
         account = self._private_client.get_account(account_id)
         return format_account_dict(account)
 
-    def get_account_history(self, account_id):
+    def get_account_history(self, account_id, before=None):
         assert(self.is_authenticated())
-        return list(self._private_client.get_account_history(account_id))
+        result = self._private_client.get_account_history(account_id, before=before) if before != None else self._private_client.get_account_history(account_id)
+        return [ e for e in result if type(e) is dict ]
 
-    def get_account_transfers(self, account_id):
+    def get_account_transfers(self, account_id, before=None):
         assert(self.is_authenticated())
-        return list(self._private_client.get_account_transfers())
+        result = self._private_client.get_account_transfers(account_id, before=before) if before != None else self._private_client.get_account_transfers(account_id)
+        return [ e for e in result if type(e) is dict ]
 
     def is_authenticated(self):
         return self._private_client != None
