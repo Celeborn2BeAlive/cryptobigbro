@@ -1,0 +1,55 @@
+{% extends "investor/base.html" %}
+{% block body %}
+
+<h1 class="title">Orders</h1>
+
+<table class="table-header-fixed">
+  <thead>
+      <tr>
+        <th>id</th>
+        <th>price</th>
+        <th>size</th>
+        <th>product_id</th>
+        <th>side</th>
+        <th>type</th>
+        <th>time_in_force</th>
+        <th>expire_time</th>
+        <th>post_only</th>
+        <th>created_at</th>
+        <th>done_at</th>
+        <th>done_reason</th>
+        <th>fill_fees</th>
+        <th>filled_size</th>
+        <th>executed_value</th>
+        <th>executed_price</th>
+        <th>status</th>
+        <th>settled</th>
+      </tr>
+  </thead>
+  <tbody>
+    {% for order in orders %}
+    <tr>
+        <td>{{ order.id }}</td>
+        <td>{{ order.price }}</td>
+        <td>{{ order.size }}</td>
+        <td>{{ order.product_id }}</td>
+        <td>{{ order.side }}</td>
+        <td>{{ order.type }}</td>
+        <td>{{ order.time_in_force }}</td>
+        <td>{{ order.expire_time }}</td>
+        <td>{{ order.post_only }}</td>
+        <td>{{ order.created_at }}</td>
+        <td>{{ order.done_at }}</td>
+        <td>{{ order.done_reason }}</td>
+        <td>{{ order.fill_fees }}</td>
+        <td>{{ order.filled_size }}</td>
+        <td>{{ order.executed_value }}</td>
+        <td>{{ order.executed_price }}</td>
+        <td>{{ order.status }}</td>
+        <td>{{ order.settled }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% endblock %}

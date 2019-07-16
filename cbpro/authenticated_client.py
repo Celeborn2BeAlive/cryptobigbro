@@ -128,6 +128,13 @@ class AuthenticatedClient(PublicClient):
         endpoint = '/accounts/{}/ledger'.format(account_id)
         return self._send_paginated_message(endpoint, params=kwargs)
 
+    def conversions(self, from_arg, to, amount, **kwargs):
+        endpoint = '/conversions'
+        params = {'from': from_arg,
+                  'to': to,
+                  'amount': str(amount)}
+        return self._send_message('post', '/conversions', data=json.dumps(params))
+
     def get_account_transfers(self, account_id, **kwargs):
         endpoint = '/accounts/{}/transfers'.format(account_id)
         return self._send_paginated_message(endpoint, params=kwargs)

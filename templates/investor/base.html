@@ -7,9 +7,16 @@
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>cryptobigbro investor</title>
 
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.5/css/bulma.min.css">
+  <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+
   <style>
     * {
         font-family: Helvetica;
+    }
+
+    html {
+        overflow-x: scroll;
     }
 
     table {
@@ -20,7 +27,14 @@
     th,
     td {
         text-align: left;
-        padding: 8px;
+        padding-left: 8px;
+    }
+
+    .table-header-fixed th {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        background: #fff;
     }
 
     tr:nth-child(even) {
@@ -32,12 +46,17 @@
 </head>
 
 <body>
-    <ul>
-        <li><a href="/">home</a></li>
-        <li><a href="/accounts">accounts</a></li>
-        <li><a href="/log">log</a></li>
-    </ul>
+    <nav class="navbar" role="navigation" aria-label="main navigation">
+        <div class="navbar-menu">
+            <a class="navbar-item" href="/">Home</a>
+            <a class="navbar-item" href="/accounts">Accounts</a>
+            <a class="navbar-item" href="/orders">Orders</a>
+            <a class="navbar-item" href="/log">Log</a>
+        </div>
+    </nav>
+    <section class="section">
     {% block body %}{% endblock %}
+    </section>
 </body>
 
 </html>
