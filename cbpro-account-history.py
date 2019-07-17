@@ -1,9 +1,21 @@
-import argparse, json
+import argparse, json, os
 from flask import Flask, render_template
 from pprint import pprint
 from exchanges import make_exchange
 from utils import list_to_dict
-import os
+from threading import Thread, Event
+
+# Todo:
+# - Diagrams: percentage diagrams (value, cost, risk)
+# - Handle backtest exchange: it takes its price from OHLCV files
+# - Curves: daily equity curve, with deposit and withdraw events, and also buy/sell
+# - Time slider (or calendar ?)
+# - Rebalance tool
+# - Update icon
+# - Generalize to other exchanges (binance at least, bittrex would be great too)
+# - Add cold storage accounts
+# - Compute markowitz portfolio weights
+# - Backtest
 
 def parse_cli_args():
     parser = argparse.ArgumentParser(description='Crypto Big Bro Coinbasepro Account History')
@@ -18,6 +30,8 @@ class CpbroHistory:
     def __init__(self, exchange):
         self.exchange = exchange
 
+        self.account_to_currency = {} # for each account, the currency
+        self.currency_to_account = {}
         self.histories = {} # for each account store its history
         self.transfers = {} # for each account, the list of its transfers
         self.orders = {}
@@ -41,9 +55,10 @@ class CpbroHistory:
     def compute_additional_data(self, account_id):
         balance = 0
         average_unit_cost = 0
+        currency = self.account_to_currency[account_id]
         for event in reversed(self.histories[account_id]):
             new_balance =  float(event["balance"])
-            if event["type"] == "match":
+            if event["type"] == "match" and currency != 'EUR':
                 if "average_unit_cost" in event["details"]:
                     average_unit_cost = event["details"]["average_unit_cost"]
                     continue
@@ -59,11 +74,14 @@ class CpbroHistory:
                     event["details"]["average_unit_cost"] = new_average_unit_cost
                     event["details"]["profit_and_loss"] = amount * executed_price - cost
                     event["details"]["profit_and_loss_return"] = event["details"]["profit_and_loss"] / cost if cost > 0 else 0
-                balance = new_balance
-                average_unit_cost = new_average_unit_cost if balance > 0 else 0
             else:
-                balance = new_balance
-                average_unit_cost = average_unit_cost if balance > 0 else 0
+                if event["type"] == "fee":
+                    amount = float(event["amount"])
+                    event["details"]["profit_and_loss"] = amount
+                new_average_unit_cost = average_unit_cost
+
+            balance = new_balance
+            average_unit_cost = new_average_unit_cost if balance > 0 else 0
 
     def compute_order_additional_data(self, order):
         if not "executed_price" in order:
@@ -86,7 +104,49 @@ class CpbroHistory:
                 "orders": self.orders
             }, f, indent=4)
 
-    def update(self, account_id):
+    def get_average_unit_cost(self, currency):
+        assert(currency in self.currency_to_account)
+        if currency == "EUR":
+            return 1
+        account_id = self.currency_to_account[currency]
+        for event in self.histories[account_id]:
+            if 'average_unit_cost' in event['details']:
+                return event['details']['average_unit_cost']
+
+    def get_realized_profit_and_loss(self, currency):
+        assert(currency in self.currency_to_account)
+        account_id = self.currency_to_account[currency]
+        profit_and_loss = 0
+        for event in self.histories[account_id]:
+            if 'profit_and_loss' in event['details']:
+                profit_and_loss += event["details"]["profit_and_loss"]
+        return profit_and_loss
+
+    def get_total_deposit(self):
+        total_deposit = 0
+        account_id = self.currency_to_account['EUR']
+        for event in self.histories[account_id]:
+            if event['type'] == 'transfer' and event['details']['transfer_type'] == 'deposit':
+                total_deposit += float(event['amount'])
+        return total_deposit
+    
+    def get_total_withdraw(self):
+        total_withdraw = 0
+        for account_id in self.histories:
+            average_unit_cost = 1 if self.account_to_currency[account_id] == 'EUR' else 0
+            for event in self.histories[account_id]:
+                if 'average_unit_cost' in event['details']:
+                    average_unit_cost = event['details']['average_unit_cost']
+                if event['type'] == 'transfer' and event['details']['transfer_type'] == 'withdraw':
+                    total_withdraw += abs(float(event['amount'])) * average_unit_cost
+        return total_withdraw
+
+    def update(self, account):
+        account_id = account['id']
+
+        self.currency_to_account[account['currency']] = account_id
+        self.account_to_currency[account_id] = account['currency']
+
         if not account_id in self.histories:
             self.histories[account_id] = []
 
@@ -110,6 +170,31 @@ class CpbroHistory:
         self.compute_additional_data(account_id)
         self.save_to_cache()
 
+def update_all_accounts(exchange, cbpro_history):
+    for account in exchange.get_accounts():
+        cbpro_history.update(account)
+
+class CbproHistoryUpdateThread(Thread):
+    def __init__(self, exchange, cbpro_history):
+        Thread.__init__(self)
+        self.event = Event()
+
+        self.cbpro_history = cbpro_history
+        self.exchange = exchange
+    
+    def run(self):
+        count = 0
+        while not self.event.is_set():
+            if count % 60 == 0:
+                update_all_accounts(self.exchange, self.cbpro_history)
+                count = 0
+            count += 1
+            self.event.wait(1)
+        print("Buy !")
+    
+    def stop(self):
+        self.event.set()
+
 def make_flask_app(exchange, cpbro_history):
     app = Flask(__name__)
 
@@ -118,32 +203,59 @@ def make_flask_app(exchange, cpbro_history):
         return round(float(s), decimals)
 
     @app.route('/')
-    def route_index():
+    @app.route('/accounts')
+    def route_accounts():
         accounts = [ a for a in exchange.get_accounts() if a['balance'] > 0.0 ]
         total_value = 0
         for a in accounts:
-            a['value'] = a['balance'] * exchange.get_price(a['currency'], 'EUR') if a['currency'] != 'EUR' else a['balance']
+            a['price'] = exchange.get_price(a['currency'], 'EUR') if a['currency'] != 'EUR' else 1
+            a['average_unit_cost'] = cpbro_history.get_average_unit_cost(a['currency'])
+            a['return'] = 100 * (a['price'] - a['average_unit_cost']) / a['average_unit_cost']
+            a['total_cost'] = a['balance'] * a['average_unit_cost']
+            a['realized_pnl'] = cpbro_history.get_realized_profit_and_loss(a['currency'])
+            a['value'] = a['balance'] * a['price']
+            a['unrealized_pnl'] = a['value'] - a['total_cost']
             total_value += a['value']
         for a in accounts:
             a['percentage'] = 100.0 * a['value'] / total_value
 
+        total_deposit = cpbro_history.get_total_deposit()
+        total_withdraw = cpbro_history.get_total_withdraw()
+        total_invested = total_deposit - total_withdraw
+        total_value = 0
+        total_unrealized_pnl = 0
+        total_at_risk = 0
         for a in accounts:
-            cpbro_history.update(a['id'])
+            total_value += a['value']
+            total_unrealized_pnl += a['unrealized_pnl']
+            if a['currency'] != 'EUR':
+                total_at_risk += a['value']
+        total_return = 100 * (total_value - total_invested) / total_invested if total_invested > 0 else 0
+        risk_percent = 100 * total_at_risk / total_value if total_value > 0 else 0
 
-        return render_template('investor/accounts.html', accounts=accounts)
+        return render_template('accounts/accounts.html', 
+            total_deposit=total_deposit,
+            total_withdraw=total_withdraw,
+            total_invested=total_invested,
+            total_value=total_value,
+            total_unrealized_pnl=total_unrealized_pnl,
+            total_return=total_return,
+            total_at_risk = total_at_risk,
+            risk_percent=risk_percent,
+            accounts=accounts
+        )
 
     @app.route('/history/<account_id>')
     def route_history(account_id):
-        cpbro_history.update(account_id)
         account = exchange.get_account(account_id)
         history = cpbro_history.histories[account_id]
         transfers = cpbro_history.transfers[account_id]
-        return render_template('investor/history.html', account=account, history=history, transfers=transfers)
+        return render_template('accounts/history.html', account=account, history=history, transfers=transfers)
 
     @app.route('/orders')
     def route_orders():
         orders = sorted(cpbro_history.orders.values(), key=lambda x: x["created_at"], reverse=True)
-        return render_template('investor/orders.html', orders=orders)
+        return render_template('accounts/orders.html', orders=orders)
 
     return app
 
@@ -157,10 +269,22 @@ def main():
     history = CpbroHistory(exchange)
 
     if args.cache_file:
+        print("Loading cache...")
         history.load_from_cache(args.cache_file)
+        print("Done.")
+
+    print("Updating all accounts...")
+    update_all_accounts(exchange, history)
+    print("Done.")
 
     app = make_flask_app(exchange, history)
 
+    update_thread = CbproHistoryUpdateThread(exchange, history)
+    update_thread.start()
+
     app.run(host='0.0.0.0', port=args.port, debug=True, threaded=True, use_reloader=False)
+
+    update_thread.stop()
+    update_thread.join()
 
 main()

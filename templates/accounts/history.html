@@ -1,0 +1,67 @@
+{% extends "accounts/base.html" %}
+{% block body %}
+
+<h1 class="title">Account {{ account.currency }} {{ account.id }}</h1>
+
+<h2 class="title">History</h2>
+
+<table>
+  <thead>
+      <tr>
+        <th>id</th>
+        <th>type</th>
+        <th>amount</th>
+        <th>balance</th>
+        <th>created at</th>
+        <th>details</th>
+      </tr>
+  </thead>
+  <tbody>
+    {% for entry in history %}
+    <tr>
+        <td>{{ entry.id }}</td>
+        <td>{{ entry.type }}</td>
+        <td>{{ entry.amount }}</td>
+        <td>{{ entry.balance }}</td>
+        <td>{{ entry.created_at }}</td>
+        <td>{{ entry.details }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h2 class="title">Transfers</h2>
+
+<table>
+  <thead>
+      <tr>
+        <th>id</th>
+        <th>type</th>
+        <th>created_at</th>
+        <th>completed_at</th>
+        <th>canceled_at</th>
+        <th>processed_at</th>
+        <th>user_nonce</th>
+        <th>amount</th>
+        <th>details</th>
+      </tr>
+  </thead>
+  <tbody>
+    {% for transfer in transfers %}
+    <tr>
+        <td>{{ transfer.id }}</td>
+        <td>{{ transfer.type }}</td>
+        <td>{{ transfer.created_at }}</td>
+        <td>{{ transfer.completed_at }}</td>
+        <td>{{ transfer.canceled_at }}</td>
+        <td>{{ transfer.processed_at }}</td>
+        <td>{{ transfer.user_nonce }}</td>
+        <td>{{ transfer.amount }}</td>
+        <td>{{ transfer.details }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+
+{% endblock %}

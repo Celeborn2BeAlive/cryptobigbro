@@ -1,0 +1,73 @@
+{% extends "accounts/base.html" %}
+{% block body %}
+<h1 class="title">Accounts</h1>
+
+
+<table>
+  <thead>
+    <tr>
+        <th>total_deposit</th>
+        <th>total_withdraw</th>
+        <th>total_invested</th>
+        <th>total_value</th>
+        <th>total_return</th>
+        <th>total_unrealized_pnl</th>
+        <th>total_at_risk</th>
+        <th>risk_percent</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>{{ total_deposit|round(2) }}</td>
+          <td>{{ total_withdraw|round(2) }}</td>
+          <td>{{ total_invested|round(2) }}</td>
+          <td>{{ total_value|round(2) }}</td>
+          <td>{{ total_return|round(2) }}</td>
+          <td>{{ total_unrealized_pnl|round(2) }}</td>
+          <td>{{ total_at_risk|round(2) }}</td>
+          <td>{{ risk_percent|round(2) }}</td>
+      </tr>
+  </tbody>
+</table>
+
+<hr>
+
+<table>
+  <thead>
+    <tr>
+        <th>currency</th>
+        <th>id</th>
+        <th>balance</th>
+        <th>available</th>
+        <th>hold</th>
+        <th>value</th>
+        <th>percentage</th>
+        <th>total_cost</th>
+        <th>average_unit_cost</th>
+        <th>price</th>
+        <th>return</th>
+        <th>unrealized_pnl</th>
+        <th>realized_pnl</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for account in accounts %}
+    <tr>
+        <td>{{ account.currency }}</td>
+        <td><a href="/history/{{ account.id }}">{{ account.id }}</a></td>
+        <td>{{ account.balance|round(2) if account.currency == 'EUR' else account.balance|round(8) }}</td>
+        <td>{{ account.available|round(2) if account.currency == 'EUR' else account.available|round(8) }}</td>
+        <td>{{ account.hold }}</td>
+        <td>{{ account.value|round(2) }}</td>
+        <td>{{ account.percentage|round(2) }}</td>
+        <td>{{ account.total_cost|round(2) }}</td>
+        <td>{{ account.average_unit_cost|round(2) }}</td>
+        <td>{{ account.price|round(2) }}</td>
+        <td>{{ account.return|round(2) }}</td>
+        <td>{{ account.unrealized_pnl|round(2) }}</td>
+        <td>{{ account.realized_pnl|round(2) }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
