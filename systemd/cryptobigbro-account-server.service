@@ -3,6 +3,9 @@ Description=Start account server
 
 [Service]
 User=cryptobigbro
-Type=oneshot
+Type=simple
 EnvironmentFile=/etc/environment
 ExecStart=bash /home/cryptobigbro/cryptobigbro-account/systemd/cryptobigbro-account-server.sh
+
+[Install]
+WantedBy=multi-user.target
