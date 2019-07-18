@@ -1,0 +1,8 @@
+[Unit]
+Description=Start account server
+
+[Service]
+User=cryptobigbro
+Type=oneshot
+EnvironmentFile=/etc/environment
+ExecStart=bash /home/cryptobigbro/cryptobigbro-account/systemd/cryptobigbro-account-server.sh
