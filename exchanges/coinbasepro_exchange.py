@@ -1,4 +1,4 @@
-import cbpro
+import cbpro, json
 import pandas as pd
 from datetime import datetime, timezone
 from utils import timedelta, candle_list_to_dataframe, compute_end_timestamp
@@ -152,3 +152,9 @@ class CoinbaseProExchange:
 
     def cancel_order(self, id):
         return self._private_client.cancel_order(id)
+    
+    def api_request(self, method, endpoint, params=None):
+        client = self._client
+        if self.is_authenticated():
+            client = self._private_client
+        return client._send_message(method, endpoint, params=params)

@@ -1,0 +1,13 @@
+{% extends "cbpro-api-explorer/base.html" %}
+
+{% block body %}
+<form method="post" action="/request">
+  URL:<br>
+  <input type="text" name="url">
+  <br>
+  Params (json):<br>
+  <textarea name="params" rows="30" cols="50"></textarea>
+  <br>
+  <input type="submit" value="Submit">
+</form>
+{% endblock %}
