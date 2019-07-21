@@ -2,8 +2,10 @@ import argparse, json, os
 from flask import Flask, render_template
 from pprint import pprint
 from exchanges import make_exchange
-from utils import list_to_dict
+from utils import list_to_dict, make_logger
 from threading import Thread, Event
+import logging # https://realpython.com/python-logging/
+import shutil, time, datetime
 
 # Todo:
 # - Diagrams: percentage diagrams (value, cost, risk)
@@ -17,12 +19,15 @@ from threading import Thread, Event
 # - Compute markowitz portfolio weights
 # - Backtest
 
+logger = None
+
 def parse_cli_args():
     parser = argparse.ArgumentParser(description='Crypto Big Bro Coinbasepro Account History')
     
     parser.add_argument('config', type=str, help='Path to a json configuration file')
     parser.add_argument('-p', '--port', type=int, default=5000, help='Port for the web interface/API')
     parser.add_argument('-c', '--cache-file', type=str, help='Path to a file to store history')
+    parser.add_argument('-l', '--log-file', help='Path to log file')
 
     return parser.parse_args()
 
@@ -40,6 +45,7 @@ class CpbroHistory:
         self.cache_filepath = None
     
     def load_from_cache(self, filepath):
+        logger.info("Loading cache...")
         self.cache_filepath = filepath
         if not os.path.exists(filepath):
             return
@@ -51,6 +57,7 @@ class CpbroHistory:
             version = 0 if not "version" in cache else cache["version"]
             if version != self.current_version:
                 self.update_from_version(version)
+        logger.info("Done.")
     
     def compute_additional_data(self, account_id):
         balance = 0
@@ -142,6 +149,7 @@ class CpbroHistory:
         return total_withdraw
 
     def update(self, account):
+        logger.info(f'Updating account {account["id"]} for currency {account["currency"]}')
         account_id = account['id']
 
         self.currency_to_account[account['currency']] = account_id
@@ -152,6 +160,7 @@ class CpbroHistory:
 
         prev = self.histories[account_id][0]["id"] if len(self.histories[account_id]) > 0 else None
         new_values = self.exchange.get_account_history(account_id, before=prev)
+        logger.info(f'Loaded {len(new_values)} new events for account {account["id"]}({account["currency"]})')
         for event in new_values:
             if event["type"] == "match" or event["type"] == "fee":
                 order_id = event["details"]["order_id"]
@@ -165,20 +174,24 @@ class CpbroHistory:
             self.transfers[account_id] = []
 
         prev = self.transfers[account_id][0]["id"] if len(self.transfers[account_id]) > 0 else None
-        self.transfers[account_id] = self.exchange.get_account_transfers(account_id, before=prev) + self.transfers[account_id]
+        new_transfers = self.exchange.get_account_transfers(account_id, before=prev)
+        logger.info(f'Loaded {len(new_transfers)} new transfers for account {account["id"]}({account["currency"]})')
+        self.transfers[account_id] = new_transfers + self.transfers[account_id]
 
         self.compute_additional_data(account_id)
         self.save_to_cache()
 
 def update_all_accounts(exchange, cbpro_history):
+    logger.info("Updating all accounts...")
     for account in exchange.get_accounts():
         cbpro_history.update(account)
+        yield
+    logger.info("Done.")
 
 class CbproHistoryUpdateThread(Thread):
     def __init__(self, exchange, cbpro_history):
         Thread.__init__(self)
         self.event = Event()
-
         self.cbpro_history = cbpro_history
         self.exchange = exchange
     
@@ -186,11 +199,13 @@ class CbproHistoryUpdateThread(Thread):
         count = 0
         while not self.event.is_set():
             if count % 60 == 0:
-                update_all_accounts(self.exchange, self.cbpro_history)
+                for _ in update_all_accounts(self.exchange, self.cbpro_history):
+                    if self.event.is_set():
+                        break
                 count = 0
             count += 1
             self.event.wait(1)
-        print("Buy !")
+        logger.info("Exiting run loop of CbproHistoryUpdateThread. Buy !")
     
     def stop(self):
         self.event.set()
@@ -260,23 +275,22 @@ def make_flask_app(exchange, cpbro_history):
     return app
 
 def main():
+    global logger
+
     args = parse_cli_args()
+    logger = make_logger('cbpro-accoung-history', args.log_file)
 
     with open(args.config) as f:
         config = json.load(f)
-    
+
     exchange = make_exchange(config["exchange"])
     history = CpbroHistory(exchange)
 
     if args.cache_file:
-        print("Loading cache...")
         history.load_from_cache(args.cache_file)
-        print("Done.")
 
-    print("Updating all accounts...")
     update_all_accounts(exchange, history)
-    print("Done.")
-
+    
     app = make_flask_app(exchange, history)
 
     update_thread = CbproHistoryUpdateThread(exchange, history)

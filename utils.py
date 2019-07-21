@@ -1,5 +1,5 @@
 from datetime import datetime, timezone, timedelta
-import os
+import os, logging, time, shutil
 import pandas as pd
 from threading import Thread, Event
 
@@ -19,7 +19,7 @@ def timedelta(timeframe):
             _ = timeframe.split(suffix)
             c = int(_[0])
             return c * timedeltas_timeframe_suffixes[suffix]
-    print("Unable to convert timeframe {} to a fixed timedelta.".format(timeframe))
+    raise RuntimeError("Unable to convert timeframe {} to a fixed timedelta.".format(timeframe))
 
 def ensure_mkdir(p):
     if not os.path.exists(p):
@@ -94,3 +94,35 @@ def seconds_to_days_hours_minutes_seconds(total_seconds):
 
 def list_to_dict(l, key):
     return { e[key]: e for e in l }
+
+def make_logger(logger_name, log_file=None):
+    logger = logging.getLogger(logger_name)
+    logger.setLevel(logging.INFO)
+
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    ch.setFormatter(formatter)
+
+    logger.addHandler(ch)
+
+    if log_file:
+        if os.path.exists(log_file):
+            logging.info(f'Log file {log_file} already exists. Copying it before overwriting...')
+            ext = datetime.fromtimestamp(time.time()).strftime('%Y%m%d-%H%M%S')
+            shutil.copy(log_file, os.path.splitext(log_file)[0] + '.' + ext + os.path.splitext(log_file)[1])
+            os.remove(log_file)
+
+        fh = logging.FileHandler(log_file, mode='w')
+        
+        if os.path.splitext(log_file)[1] == '.html':
+            fh.setFormatter(logging.Formatter('<p>%(asctime)s - %(levelname)s - %(message)s</p>'))
+        else:
+            fh.setFormatter(formatter)
+
+        logger.addHandler(fh)
+
+        logger.info(f'Logging to file {log_file}')
+    
+    return logger
