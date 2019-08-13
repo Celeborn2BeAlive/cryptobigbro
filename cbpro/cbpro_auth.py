@@ -2,8 +2,12 @@ import hmac
 import hashlib
 import time
 import base64
+import requests
 from requests.auth import AuthBase
 
+def get_cbpro_timestamp():
+    r = requests.get('https://api.pro.coinbase.com/time')
+    return r.json()["epoch"]
 
 class CBProAuth(AuthBase):
     # Provided by CBPro: https://docs.pro.coinbase.com/#signing-a-message
@@ -13,7 +17,7 @@ class CBProAuth(AuthBase):
         self.passphrase = passphrase
 
     def __call__(self, request):
-        timestamp = str(time.time())
+        timestamp = str(get_cbpro_timestamp())
         message = ''.join([timestamp, request.method,
                            request.path_url, (request.body or '')])
         request.headers.update(get_auth_headers(timestamp, message,
