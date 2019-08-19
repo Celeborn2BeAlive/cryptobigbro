@@ -42,3 +42,10 @@ Timestamps are in seconds and in UTC timezone.
 
 - Better README.md
 - Check how to get api rate limit with each python api
+- Use shrimpy API to rewrite "investor.py"
+- Use logging module in cryptobigbro
+- Transform cryptobigbro to be the starting command of every script
+- Use shrimpy API to build a daily rebalance algorithm based on momentum based markowitz optimization
+- Backtest with https://github.com/backtrader/backtrader
+- Read https://www.quantstart.com/articles/Event-Driven-Backtesting-with-Python-Part-I for backtest theory and practice
+- https://robusttechhouse.com/python-backtesting-libraries-for-quant-trading-strategies/
