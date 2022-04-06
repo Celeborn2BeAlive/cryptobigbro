@@ -54,7 +54,7 @@ sortedcontainers==2.1.0
 strict-rfc3339==0.7
 swagger-spec-validator==2.4.3
 tornado==6.0.3
-Twisted==19.2.0
+Twisted==22.2.0
 txaio==18.8.1
 typing-extensions==3.7.2
 tzlocal==1.5.1
